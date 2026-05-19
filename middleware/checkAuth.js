@@ -24,11 +24,10 @@ const checkAuth = async (req, res, next) => {
     req.user = user;
     next();
   } else {
-    res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
     return res
       .status(401)
       .send(
-        "<script>alert('Invalides identifiants'); window.location.href = '/';</script>",
+        "<script>console.log('Invalides identifiants'); alert('Invalides identifiants'); window.location.href = '/';</script>",
       );
   }
 };
