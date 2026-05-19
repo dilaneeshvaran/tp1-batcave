@@ -11,10 +11,16 @@ Then open http://localhost:3000 in your browser.
 
 1. create a normal account at `/register`.
 2. open your sqlite database tool and execute:
+
    ```sql
    UPDATE users SET role = 'ADMIN' WHERE username = 'your_username';
    ```
-   _(Alternatively, run this directly in terminal: `node -e "require('./db').prepare(\"UPDATE users SET role = 'ADMIN' WHERE username = 'your_username'\").run()"`)_
+
+   Alternatively, run this directly in terminal:
+
+   ```bash
+   node -e "require('./db').prepare('UPDATE users SET role = ? WHERE username = ?').run('ADMIN', 'your_username')"
+   ```
 
 ---
 
