@@ -38,6 +38,26 @@
           </tr>
         </tbody>
       </table>
+
+      <h2 style="margin-top: 2rem">Journal d'accès</h2>
+      <p class="admin-desc">
+        Chaque acces a une route protegee est enregistré ici
+      </p>
+      <table class="admin-table" id="logs-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>username</th>
+            <th>role</th>
+            <th>timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="logs-body">
+          <tr>
+            <td colspan="4">chargement…</td>
+          </tr>
+        </tbody>
+      </table>
     </main>
 
     <script src="/logout.js"></script>
@@ -90,7 +110,37 @@
         }
       }
 
+      async function loadLogs() {
+        const res = await fetch("/api/admin/logs");
+        if (!res.ok) {
+          document.getElementById("logs-body").innerHTML =
+            `<tr><td colspan="4" style="color:red;">acces refusé</td></tr>`;
+          return;
+        }
+        const logs = await res.json();
+        if (logs.length === 0) {
+          document.getElementById("logs-body").innerHTML =
+            `<tr><td colspan="4">aucun acces enregistré pour l'instant.</td></tr>`;
+          return;
+        }
+        document.getElementById("logs-body").innerHTML = logs
+          .map(
+            (l) => `
+          <tr>
+            <td>${l.id}</td>
+            <td>${l.username}</td>
+            <td><span class="role-badge role-${l.role.toLowerCase()}">${l.role}</span></td>
+            <td>${new Date(l.timestamp).toLocaleString("fr-FR")}</td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
       loadUsers();
+      loadLogs();
+      // refresh every 10 seconds
+      setInterval(loadLogs, 10000);
     </script>
   </body>
 </html>
