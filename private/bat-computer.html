@@ -9,7 +9,12 @@
   <body class="dashboard">
     <header class="header">
       <div class="me"></div>
-      <button class="logout btn-primary">Se déconnecter</button>
+      <div class="header-actions">
+        <a href="/admin" class="btn-admin" id="admin-panel-btn"
+          >panneau d'administration</a
+        >
+        <button class="logout btn-primary">se deconnecter</button>
+      </div>
     </header>
 
     <main class="container">
@@ -55,6 +60,10 @@
         .then((data) => {
           document.querySelector(".me").textContent =
             `Bienvenue, Justicier, ${data.username}!`;
+          if (data.role === "ADMIN") {
+            document.getElementById("admin-panel-btn").style.display =
+              "inline-block";
+          }
         })
         .catch((error) => {
           console.error("Error fetching user info:", error);
