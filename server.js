@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const db = require("./db");
 const checkAuth = require("./middleware/checkAuth");
+const checkAdmin = require("./middleware/checkAdmin");
 
 const app = express();
 app.use(express.json());
@@ -60,7 +61,29 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/api/me", checkAuth, (req, res) => {
-  res.json({ username: req.user.username, id: req.user.id });
+  res.json({
+    username: req.user.username,
+    id: req.user.id,
+    role: req.user.role,
+  });
+});
+
+app.get("/admin", checkAuth, checkAdmin, (req, res) => {
+  res.sendFile(__dirname + "/private/admin.html");
+});
+
+app.get("/api/admin/users", checkAuth, checkAdmin, (req, res) => {
+  const users = db.prepare("SELECT id, username, role FROM users").all();
+  res.json(users);
+});
+
+app.put("/api/admin/users/:id/role", checkAuth, checkAdmin, (req, res) => {
+  const { role } = req.body;
+  if (!role || !["ADMIN", "USER"].includes(role)) {
+    return res.status(400).send("role invalide");
+  }
+  db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, req.params.id);
+  res.json({ success: true });
 });
 
 app.post("/api/logout", (req, res) => {

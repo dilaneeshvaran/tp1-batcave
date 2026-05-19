@@ -6,7 +6,8 @@ db.exec(
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
-    password_hash TEXT
+    password_hash TEXT,
+    role TEXT NOT NULL DEFAULT 'USER'
   );
   
   CREATE TABLE IF NOT EXISTS reports (
@@ -17,5 +18,9 @@ db.exec(
   );
 `,
 );
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'USER'");
+} catch (_) {}
 
 module.exports = db;
