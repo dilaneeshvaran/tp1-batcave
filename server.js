@@ -66,3 +66,9 @@ app.get("/api/me", checkAuth, (req, res) => {
 app.post("/api/logout", (req, res) => {
   return res.status(401).send("Logged out");
 });
+
+app.post("/api/report", checkAuth, (req, res) => {
+  const { message } = req.body;
+  console.log(`Report from ${req.user.username}: ${message}`);
+  res.send("Report received");
+});
