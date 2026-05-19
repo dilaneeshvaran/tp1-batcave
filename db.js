@@ -16,6 +16,13 @@ db.exec(
     user_id INTEGER,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    role TEXT NOT NULL,
+    timestamp TEXT NOT NULL
+  );
 `,
 );
 
