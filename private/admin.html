@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>admin panel</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body class="dashboard">
+    <header class="header">
+      <div class="me">admin panel</div>
+      <div class="header-actions">
+        <a href="/bat-computer" class="btn-primary home-btn" id="btn-back"
+          >retour</a
+        >
+        <button class="logout btn-primary" id="btn-logout">
+          se deconnecter
+        </button>
+      </div>
+    </header>
+
+    <main class="container">
+      <h2>Gestion des utilisateurs</h2>
+      <p class="admin-desc">Seuls les admins peuvent acceder à cette page.</p>
+
+      <table class="admin-table" id="users-table">
+        <thead>
+          <tr>
+            <th>id</th>
+            <th>username</th>
+            <th>role</th>
+            <th>action</th>
+          </tr>
+        </thead>
+        <tbody id="users-body">
+          <tr>
+            <td colspan="4">chargement…</td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+
+    <script src="/logout.js"></script>
+    <script>
+      document.getElementById("btn-logout").addEventListener("click", logout);
+
+      async function loadUsers() {
+        const res = await fetch("/api/admin/users");
+        if (!res.ok) {
+          document.getElementById("users-body").innerHTML =
+            `<tr><td colspan="4" style="color:red;">Acces refuse (403)</td></tr>`;
+          return;
+        }
+        const users = await res.json();
+        document.getElementById("users-body").innerHTML = users
+          .map(
+            (u) => `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.username}</td>
+            <td>
+              <span class="role-badge role-${u.role.toLowerCase()}">${u.role}</span>
+            </td>
+            <td>
+              <select class="role-select" data-id="${u.id}" id="role-select-${u.id}">
+                <option value="USER" ${u.role === "USER" ? "selected" : ""}>USER</option>
+                <option value="ADMIN" ${u.role === "ADMIN" ? "selected" : ""}>ADMIN</option>
+              </select>
+              <button class="btn-primary btn-sm" onclick="updateRole(${u.id})">Enregistrer</button>
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
+      async function updateRole(userId) {
+        const select = document.getElementById(`role-select-${userId}`);
+        const role = select.value;
+        const res = await fetch(`/api/admin/users/${userId}/role`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role }),
+        });
+        if (res.ok) {
+          alert(`le role a été mis a jour avec succes`);
+          loadUsers();
+        } else {
+          alert("erreur lors de la mise a jour du role");
+        }
+      }
+
+      loadUsers();
+    </script>
+  </body>
+</html>
