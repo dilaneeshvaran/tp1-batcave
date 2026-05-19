@@ -8,6 +8,13 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
+// log when user reaches protected route
+function insertLog(user) {
+  db.prepare(
+    "INSERT INTO logs (username, role, timestamp) VALUES (?, ?, ?)",
+  ).run(user.username, user.role, new Date().toISOString());
+}
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`server running at http://localhost:${PORT}`);
@@ -38,10 +45,12 @@ app.post("/register", async (req, res) => {
 });
 
 app.get("/bat-computer", checkAuth, (req, res) => {
+  insertLog(req.user);
   res.sendFile(__dirname + "/private/bat-computer.html");
 });
 
 app.get("/api/secrets", checkAuth, (req, res) => {
+  insertLog(req.user);
   res.json([
     { name: "Batarang", desc: "Arme de jet", icon: "fa-shuriken" },
     { name: "Batmobile", desc: "vehicule de batman", icon: "fa-car" },
@@ -69,6 +78,7 @@ app.get("/api/me", checkAuth, (req, res) => {
 });
 
 app.get("/admin", checkAuth, checkAdmin, (req, res) => {
+  insertLog(req.user);
   res.sendFile(__dirname + "/private/admin.html");
 });
 
@@ -84,6 +94,13 @@ app.put("/api/admin/users/:id/role", checkAuth, checkAdmin, (req, res) => {
   }
   db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, req.params.id);
   res.json({ success: true });
+});
+
+app.get("/api/admin/logs", checkAuth, checkAdmin, (req, res) => {
+  const logs = db
+    .prepare("SELECT id, username, role, timestamp FROM logs ORDER BY id DESC")
+    .all();
+  res.json(logs);
 });
 
 app.post("/api/logout", (req, res) => {
