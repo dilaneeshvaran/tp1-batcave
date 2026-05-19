@@ -7,7 +7,7 @@ npm start
 
 Then open http://localhost:3000 in your browser.
 
-## test admin panel
+## test admin panel (to see logs and change user roles)
 
 1. create a normal account at `/register`.
 2. open your sqlite database tool and execute:
