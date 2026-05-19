@@ -15,6 +15,12 @@
     <main class="container">
       <h2>Arsenal Top Secret</h2>
       <div id="secrets"></div>
+
+      <h2>notes de mission</h2>
+      <button class="btn-primary" id="add-note-btn">
+        ajouter une note de mission
+      </button>
+      <div id="notes"></div>
     </main>
 
     <script src="/logout.js"></script>
@@ -55,6 +61,49 @@
         });
 
       document.querySelector(".logout").addEventListener("click", logout);
+
+      document.getElementById("add-note-btn").addEventListener("click", () => {
+        const message = prompt("entrez note de mission :");
+        if (message) {
+          fetch("/api/reports", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message }),
+          }).then((res) => {
+            if (res.ok) {
+              loadReports();
+            } else {
+              alert("erreur de lenregistrement de la note");
+            }
+          });
+        }
+      });
+
+      function loadReports() {
+        fetch("/api/reports")
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("notes").innerHTML = `
+              <ul class="notes-list">
+                ${data
+                  .map(
+                    (report) => `
+                  <li class="note-item">
+                    <strong>Mission #${report.id} - rapporté par ${report.username}:</strong> 
+                    <p class="note-message">${report.message}</p>
+                  </li>
+                `,
+                  )
+                  .join("")}
+              </ul>
+            `;
+          })
+          .catch((error) => console.error("error fetching reports:", error));
+      }
+
+      loadReports();
     </script>
   </body>
 </html>

@@ -67,7 +67,33 @@ app.post("/api/logout", (req, res) => {
   return res.status(401).send("Logged out");
 });
 
-app.post("/api/report", checkAuth, (req, res) => {
-  const { message, user_id } = req.body;
-  console.log(`${req.user.id}`);
+app.post("/api/reports", checkAuth, (req, res) => {
+  const { message } = req.body;
+  const user_id = req.user.id;
+  try {
+    const insert = db.prepare(
+      "INSERT INTO reports (message, user_id) VALUES (?, ?)",
+    );
+    insert.run(message, user_id);
+    res.status(201).send("report saved");
+  } catch (err) {
+    res.status(500).send("error saving report");
+  }
+});
+
+app.get("/api/reports", checkAuth, (req, res) => {
+  try {
+    const reports = db
+      .prepare(
+        `
+      SELECT reports.id, reports.message, reports.user_id, users.username 
+      FROM reports 
+      JOIN users ON reports.user_id = users.id
+    `,
+      )
+      .all();
+    res.json(reports);
+  } catch (err) {
+    res.status(500).send("error fetching reports");
+  }
 });
