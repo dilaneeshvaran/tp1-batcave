@@ -1,5 +1,5 @@
 function logout() {
-  fetch("/api/logout", {
+  fetch("/logout", {
     method: "POST",
     headers: { Authorization: "Basic logout:logout" },
   })

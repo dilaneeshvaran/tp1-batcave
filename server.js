@@ -103,8 +103,9 @@ app.get("/api/admin/logs", checkAuth, checkAdmin, (req, res) => {
   res.json(logs);
 });
 
-app.post("/api/logout", (req, res) => {
-  return res.status(401).send("Logged out");
+app.post("/logout", (req, res) => {
+  res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
+  return res.status(401).json({ message: "logged out" });
 });
 
 app.post("/api/reports", checkAuth, (req, res) => {
