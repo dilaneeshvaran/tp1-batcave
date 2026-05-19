@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="me"></div>
+    <button class="logout">Se déconnecter</button>
+    <script src="/logout.js"></script>
+    <script>
+      fetch("/api/me")
+        .then((response) => response.json())
+        .then((data) => {
+          document.querySelector(".me").textContent =
+            `Bienvenue, Justicier, ${data.username}!`;
+        })
+        .catch((error) => {
+          console.error("Error fetching user info:", error);
+        });
+
+      document.querySelector(".logout").addEventListener("click", logout);
+    </script>
+  </body>
+</html>
