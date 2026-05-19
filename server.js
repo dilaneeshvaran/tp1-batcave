@@ -41,7 +41,7 @@ app.get("/bat-computer", checkAuth, (req, res) => {
 });
 
 app.get("/api/secrets", checkAuth, (req, res) => {
-  res.json(
+  res.json([
     { name: "Batarang", desc: "Arme de jet", icon: "fa-shuriken" },
     { name: "Batmobile", desc: "vehicule de batman", icon: "fa-car" },
     { name: "Cape", desc: "Permet de planer", icon: "fa-cape" },
@@ -52,7 +52,7 @@ app.get("/api/secrets", checkAuth, (req, res) => {
     },
     { name: "Gants", desc: "gants avec des griffes", icon: "fa-hand" },
     { name: "Bat-Grenade", desc: "Grenade explosive", icon: "fa-bomb" },
-  );
+  ]);
 });
 
 app.get("/register", (req, res) => {
@@ -68,7 +68,6 @@ app.post("/api/logout", (req, res) => {
 });
 
 app.post("/api/report", checkAuth, (req, res) => {
-  const { message } = req.body;
-  console.log(`Report from ${req.user.username}: ${message}`);
-  res.send("Report received");
+  const { message, user_id } = req.body;
+  console.log(`${req.user.id}`);
 });

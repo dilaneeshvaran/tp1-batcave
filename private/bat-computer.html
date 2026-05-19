@@ -4,12 +4,46 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+    <link rel="stylesheet" href="/style.css" />
   </head>
-  <body>
-    <div class="me"></div>
-    <button class="logout">Se déconnecter</button>
+  <body class="dashboard">
+    <header class="header">
+      <div class="me"></div>
+      <button class="logout btn-primary">Se déconnecter</button>
+    </header>
+
+    <main class="container">
+      <h2>Arsenal Top Secret</h2>
+      <div id="secrets"></div>
+    </main>
+
     <script src="/logout.js"></script>
     <script>
+      fetch("/api/secrets")
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Secrets:", data);
+          document.getElementById("secrets").innerHTML = `
+            <div class="secrets-grid">
+              ${data
+                .map(
+                  (secret) => `
+                <div class="card">
+                  <div class="card-body">
+                    <h3>${secret.name}</h3>
+                    <p>${secret.desc}</p>
+                  </div>
+                </div>
+              `,
+                )
+                .join("")}
+            </div>
+          `;
+        })
+        .catch((error) => {
+          console.error("Error fetching secrets:", error);
+        });
+
       fetch("/api/me")
         .then((response) => response.json())
         .then((data) => {
