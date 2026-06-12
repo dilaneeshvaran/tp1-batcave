@@ -72,6 +72,8 @@ router.post("/auth/login", async (req, res, next) => {
         username: user.username,
         role: user.role,
       };
+      req.session.ip = req.ip;
+      req.session.userAgent = req.headers["user-agent"];
       // 2. Sauvegarder explicitement : req.session.save()
       req.session.save((err) => {
         if (err) return next(err);

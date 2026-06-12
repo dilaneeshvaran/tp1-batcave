@@ -6,6 +6,7 @@ const db = require("./config/db");
 const authRouter = require("./routes/auth");
 const batcomputerRouter = require("./routes/batcomputer");
 const adminRouter = require("./routes/admin");
+const sessionSecurity = require("./middlewares/sessionSecurity");
 
 const app = express();
 app.use(express.json());
@@ -32,6 +33,8 @@ app.use(
     },
   })
 );
+
+app.use(sessionSecurity);
 
 // Mount entity routers
 app.use("/", authRouter);
