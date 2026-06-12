@@ -1,4 +1,9 @@
-# How to start
+# TP1 et TP2
+
+TP1 est sur la branche main
+TP2 est sur la branche tp2
+
+## How to start
 
 ```bash
 npm install
