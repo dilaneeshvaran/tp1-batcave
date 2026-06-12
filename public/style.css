@@ -37,7 +37,7 @@ body.dashboard {
 }
 
 .btn-primary {
-  background-color: #008b3c;
+  background-color: #00082f;
   color: white;
   border: none;
   padding: 10px;
@@ -47,11 +47,11 @@ body.dashboard {
 }
 
 .btn-primary:hover {
-  background-color: rgb(0, 179, 92);
+  background-color: #000314;
 }
 
 #message {
-  color: #d9534f;
+  color: #220100;
   font-size: 0.9em;
   margin-bottom: 10px;
   text-align: center;
@@ -59,7 +59,7 @@ body.dashboard {
 
 #register-form a, #login-form a {
   text-decoration: none;
-  color: #008b3c;
+  color: #00082f;
   font-size: 0.9em;
   text-align: center;
   margin-top: 10px;
@@ -94,7 +94,7 @@ body.dashboard {
 
 .card-body h3 {
   margin-top: 0;
-  color: #008b3c;
+  color: #00082f;
 }
 
 .header {
@@ -121,10 +121,11 @@ body.dashboard {
 .notes-list {
   list-style-type: none;
   padding: 0;
+  color: rgb(229, 229, 229);
 }
 
 .note-item {
-  background: #beffda;
+  background: #000c4f;
   margin: 10px 0;
   padding: 15px;
   border-radius: 8px;
@@ -177,7 +178,7 @@ body.dashboard {
 }
 
 .btn-admin {
-  background-color: #c0392b;
+  background-color: #640a00;
   color: white;
   border: none;
   padding: 10px 16px;
@@ -190,7 +191,7 @@ body.dashboard {
 }
 
 .btn-admin:hover {
-  background-color: #e74c3c;
+  background-color: #3f0600;
 }
 
 .header-actions {
@@ -213,7 +214,7 @@ body.dashboard {
 }
 
 .admin-table th {
-  background: #008b3c;
+  background: #640a00;
   color: white;
   padding: 12px 16px;
   text-align: left;
