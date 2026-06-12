@@ -13,7 +13,7 @@ document.getElementById("register-form").onsubmit = async (e) => {
   if (response.ok) {
     messageElement.style.color = "green";
     messageElement.innerText = "Inscription réussie ! Redirection en cours...";
-    setTimeout(() => (window.location.href = "bat-computer"), 2000);
+    setTimeout(() => (window.location.href = "/auth/login"), 2000);
   } else {
     const errorMessage = await response.text();
     messageElement.style.color = "red";

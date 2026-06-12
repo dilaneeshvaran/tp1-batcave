@@ -3,15 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inscription</title>
+    <title>Connexion</title>
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <form id="register-form">
+    <form id="login-form" method="POST" action="/auth/login">
+      <h2>Connexion</h2>
       <label for="username">Nom d'utilisateur</label>
       <input
         type="text"
         id="username"
+        name="username"
         placeholder="Nom d'utilisateur"
         required
       />
@@ -19,13 +21,13 @@
       <input
         type="password"
         id="password"
+        name="password"
         placeholder="Mot de passe"
         required
       />
-      <button type="submit" class="btn btn-primary mt-2">S'inscrire</button>
+      <button type="submit" class="btn-primary mt-2">Se connecter</button>
       <p id="message"></p>
-      <a href="/auth/login">Déjà un compte ? </a>
+      <a href="/register">Pas encore de compte ? S'inscrire</a>
     </form>
-    <script src="/register.js"></script>
   </body>
 </html>

@@ -3,15 +3,23 @@ const db = require("../config/db");
 const { isBlocked, recordFailure, recordSuccess } = require("./loginLimiter");
 
 const checkAuth = async (req, res, next) => {
+  if (req.session && req.session.user) {
+    req.user = req.session.user;
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Basic ")) {
-    res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
-    return res
-      .status(401)
-      .send(
-        "<script>alert('Authentification requise'); window.location.href = '/';</script>",
-      );
+    if (req.path.startsWith("/api/")) {
+      res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
+      return res
+        .status(401)
+        .send(
+          "<script>alert('authentification requise'); window.location.href = '/auth/login';</script>",
+        );
+    }
+    return res.redirect("/auth/login");
   }
   const base64 = authHeader.split(" ")[1];
   const [username, password] = Buffer.from(base64, "base64")

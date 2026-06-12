@@ -13,7 +13,7 @@ body.dashboard {
   height: auto;
 }
 
-#register-form {
+#register-form, #login-form {
   background: #fff;
   padding: 20px 30px;
   border-radius: 8px;
@@ -23,13 +23,13 @@ body.dashboard {
   width: 300px;
 }
 
-#register-form label {
+#register-form label, #login-form label {
   margin-bottom: 5px;
   font-weight: bold;
   color: #333;
 }
 
-#register-form input {
+#register-form input, #login-form input {
   margin-bottom: 15px;
   padding: 10px;
   border: 1px solid #ccc;
@@ -57,7 +57,7 @@ body.dashboard {
   text-align: center;
 }
 
-#register-form a {
+#register-form a, #login-form a {
   text-decoration: none;
   color: #008b3c;
   font-size: 0.9em;
@@ -66,7 +66,7 @@ body.dashboard {
   display: block;
 }
 
-#register-form a:hover {
+#register-form a:hover, #login-form a:hover {
   text-decoration: underline;
 }
 
