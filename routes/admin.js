@@ -38,4 +38,11 @@ router.get("/api/admin/logs", checkAuth, checkAdmin, (req, res) => {
   res.json(logs);
 });
 
+router.get("/api/admin/audit-logs", checkAuth, checkAdmin, (req, res) => {
+  const auditLogs = db
+    .prepare("SELECT id, username, action, ip_address, user_agent, timestamp FROM connexions_audit ORDER BY id DESC")
+    .all();
+  res.json(auditLogs);
+});
+
 module.exports = router;

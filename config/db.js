@@ -24,6 +24,15 @@ db.exec(
     role TEXT NOT NULL,
     timestamp TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS connexions_audit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    action TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    timestamp TEXT NOT NULL
+  );
 `,
 );
 

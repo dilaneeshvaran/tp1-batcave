@@ -258,3 +258,27 @@ body.dashboard {
   padding: 5px 12px;
   font-size: 0.85em;
 }
+
+.action-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 0.82em;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 4px;
+}
+
+.action-login {
+  background: #e6f4ee;
+  color: #0d5c3a;
+}
+
+.action-logout {
+  background: #e6f0fa;
+  color: #1a5c96;
+}
+
+.action-fraud {
+  background: #fde8e6;
+  color: #c0392b;
+}

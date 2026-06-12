@@ -77,6 +77,16 @@ router.post("/auth/login", async (req, res, next) => {
       // 2. Sauvegarder explicitement : req.session.save()
       req.session.save((err) => {
         if (err) return next(err);
+
+        // audit log for successful login
+        try {
+          db.prepare(
+            "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
+          ).run(user.username, "LOGIN", req.ip, req.headers["user-agent"] || "", new Date().toISOString());
+        } catch (auditErr) {
+          console.error("failed to log successful login", auditErr);
+        }
+
         // 3. Rediriger l'utilisateur vers le tableau de bord (/bat-computer)
         res.redirect("/bat-computer");
       });
@@ -110,6 +120,16 @@ router.get("/api/me", checkAuth, (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
+  const username = req.session && req.session.user ? req.session.user.username : null;
+  if (username) {
+    try {
+      db.prepare(
+        "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
+      ).run(username, "LOGOUT", req.ip, req.headers["user-agent"] || "", new Date().toISOString());
+    } catch (auditErr) {
+      console.error("failed to log voluntary logout", auditErr);
+    }
+  }
   req.session.destroy((err) => {
     res.clearCookie("bat_identity");
     res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
@@ -118,6 +138,16 @@ router.post("/logout", (req, res) => {
 });
 
 router.get("/auth/logout", (req, res) => {
+  const username = req.session && req.session.user ? req.session.user.username : null;
+  if (username) {
+    try {
+      db.prepare(
+        "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
+      ).run(username, "LOGOUT", req.ip, req.headers["user-agent"] || "", new Date().toISOString());
+    } catch (auditErr) {
+      console.error("failed to log voluntary logout", auditErr);
+    }
+  }
   req.session.destroy((err) => {
     res.clearCookie("bat_identity");
     res.redirect("/auth/login");

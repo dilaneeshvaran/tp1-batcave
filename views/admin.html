@@ -58,6 +58,28 @@
           </tr>
         </tbody>
       </table>
+
+      <h2 style="margin-top: 2rem">Audit des Connexions</h2>
+      <p class="admin-desc">
+        Historique des connexions réussies, déconnexions volontaires et tentatives de fraude
+      </p>
+      <table class="admin-table" id="audit-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>username</th>
+            <th>action</th>
+            <th>ip_address</th>
+            <th>user_agent</th>
+            <th>timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="audit-body">
+          <tr>
+            <td colspan="6">chargement…</td>
+          </tr>
+        </tbody>
+      </table>
     </main>
 
     <script src="/logout.js"></script>
@@ -137,10 +159,43 @@
           .join("");
       }
 
+      async function loadAuditLogs() {
+        const res = await fetch("/api/admin/audit-logs");
+        if (!res.ok) {
+          document.getElementById("audit-body").innerHTML =
+            `<tr><td colspan="6" style="color:red;">accès refusé</td></tr>`;
+          return;
+        }
+        const logs = await res.json();
+        if (logs.length === 0) {
+          document.getElementById("audit-body").innerHTML =
+            `<tr><td colspan="6">aucun événement enregistré pour l'instant.</td></tr>`;
+          return;
+        }
+        document.getElementById("audit-body").innerHTML = logs
+          .map(
+            (l) => `
+          <tr>
+            <td>${l.id}</td>
+            <td>${l.username || 'unknown'}</td>
+            <td><span class="action-badge action-${l.action.toLowerCase()}">${l.action}</span></td>
+            <td>${l.ip_address || '-'}</td>
+            <td style="font-size: 0.85em; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${l.user_agent || '-'}">${l.user_agent || '-'}</td>
+            <td>${new Date(l.timestamp).toLocaleString("fr-FR")}</td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
       loadUsers();
       loadLogs();
+      loadAuditLogs();
       // refresh every 10 seconds
-      setInterval(loadLogs, 10000);
+      setInterval(() => {
+        loadLogs();
+        loadAuditLogs();
+      }, 10000);
     </script>
   </body>
 </html>
