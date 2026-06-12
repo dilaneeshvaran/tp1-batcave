@@ -1,7 +1,9 @@
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 const db = require("../config/db");
 const checkAuth = require("../middlewares/checkAuth");
+const isAuthenticated = require("../middlewares/authCheck");
 
 const router = express.Router();
 
@@ -11,9 +13,19 @@ function insertLog(user) {
   ).run(user.username, user.role, new Date().toISOString());
 }
 
-router.get("/bat-computer", checkAuth, (req, res) => {
+router.get("/bat-computer", isAuthenticated, (req, res) => {
   insertLog(req.user);
-  res.sendFile(path.join(__dirname, "../views/bat-computer.html"));
+  const filePath = path.join(__dirname, "../views/bat-computer.html");
+  fs.readFile(filePath, "utf8", (err, html) => {
+    if (err) {
+      return res.status(500).send("erreur lors du chargement du tableau de bord");
+    }
+    const personalizedHtml = html.replace(
+      '<div class="me"></div>',
+      `<div class="me">Bienvenue, Justicier, ${req.session.user.username}!</div>`
+    );
+    res.send(personalizedHtml);
+  });
 });
 
 router.get("/api/secrets", checkAuth, (req, res) => {

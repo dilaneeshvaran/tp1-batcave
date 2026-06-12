@@ -115,4 +115,11 @@ router.post("/logout", (req, res) => {
   });
 });
 
+router.get("/auth/logout", (req, res) => {
+  req.session.destroy((err) => {
+    res.clearCookie("bat_identity");
+    res.redirect("/auth/login");
+  });
+});
+
 module.exports = router;
