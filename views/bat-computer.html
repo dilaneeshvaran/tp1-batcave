@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body class="dashboard">
+    <header class="header">
+      <div class="me"></div>
+      <div class="header-actions">
+        <a href="/admin" class="btn-admin" id="admin-panel-btn"
+          >panneau d'administration</a
+        >
+        <button class="logout btn-primary">se deconnecter</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <h2>Arsenal Top Secret</h2>
+      <div id="secrets"></div>
+
+      <h2>notes de mission</h2>
+      <button class="btn-primary" id="add-note-btn">
+        ajouter une note de mission
+      </button>
+      <div id="notes"></div>
+    </main>
+
+    <script src="/logout.js"></script>
+    <script>
+      fetch("/api/secrets")
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Secrets:", data);
+          document.getElementById("secrets").innerHTML = `
+            <div class="secrets-grid">
+              ${data
+                .map(
+                  (secret) => `
+                <div class="card">
+                  <div class="card-body">
+                    <h3>${secret.name}</h3>
+                    <p>${secret.desc}</p>
+                  </div>
+                </div>
+              `,
+                )
+                .join("")}
+            </div>
+          `;
+        })
+        .catch((error) => {
+          console.error("Error fetching secrets:", error);
+        });
+
+      fetch("/api/me")
+        .then((response) => response.json())
+        .then((data) => {
+          document.querySelector(".me").textContent =
+            `Bienvenue, Justicier, ${data.username}!`;
+          if (data.role === "ADMIN") {
+            document.getElementById("admin-panel-btn").style.display =
+              "inline-block";
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching user info:", error);
+        });
+
+      document.querySelector(".logout").addEventListener("click", logout);
+
+      document.getElementById("add-note-btn").addEventListener("click", () => {
+        const message = prompt("entrez note de mission :");
+        if (message) {
+          fetch("/api/reports", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message }),
+          }).then((res) => {
+            if (res.ok) {
+              loadReports();
+            } else {
+              alert("erreur de lenregistrement de la note");
+            }
+          });
+        }
+      });
+
+      function loadReports() {
+        fetch("/api/reports")
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("notes").innerHTML = `
+              <ul class="notes-list">
+                ${data
+                  .map(
+                    (report) => `
+                  <li class="note-item">
+                    <strong>Mission #${report.id} - rapporté par ${report.username}:</strong> 
+                    <p class="note-message">${report.message}</p>
+                  </li>
+                `,
+                  )
+                  .join("")}
+              </ul>
+            `;
+          })
+          .catch((error) => console.error("error fetching reports:", error));
+      }
+
+      loadReports();
+    </script>
+  </body>
+</html>

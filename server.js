@@ -1,140 +1,19 @@
+require("dotenv").config();
 const express = require("express");
-const bcrypt = require("bcrypt");
-const db = require("./db");
-const checkAuth = require("./middleware/checkAuth");
-const checkAdmin = require("./middleware/checkAdmin");
+const authRouter = require("./routes/auth");
+const batcomputerRouter = require("./routes/batcomputer");
+const adminRouter = require("./routes/admin");
 
 const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-// log when user reaches protected route
-function insertLog(user) {
-  db.prepare(
-    "INSERT INTO logs (username, role, timestamp) VALUES (?, ?, ?)",
-  ).run(user.username, user.role, new Date().toISOString());
-}
+// Mount entity routers
+app.use("/", authRouter);
+app.use("/", batcomputerRouter);
+app.use("/", adminRouter);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`server running at http://localhost:${PORT}`);
-});
-
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
-});
-
-app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
-
-  if (password.length < 8) {
-    return res.status(400).send("mdp must be at least 8 characters long");
-  }
-
-  const hash = await bcrypt.hash(password, 10);
-
-  try {
-    const insert = db.prepare(
-      "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-    );
-    insert.run(username.trim(), hash);
-    res.status(201).send("User created successfully");
-  } catch (err) {
-    res.status(409).send("user already exists");
-  }
-});
-
-app.get("/bat-computer", checkAuth, (req, res) => {
-  insertLog(req.user);
-  res.sendFile(__dirname + "/private/bat-computer.html");
-});
-
-app.get("/api/secrets", checkAuth, (req, res) => {
-  insertLog(req.user);
-  res.json([
-    { name: "Batarang", desc: "Arme de jet", icon: "fa-shuriken" },
-    { name: "Batmobile", desc: "vehicule de batman", icon: "fa-car" },
-    { name: "Cape", desc: "Permet de planer", icon: "fa-cape" },
-    {
-      name: "Bat-Signal",
-      desc: "Projecteur pour appeler batman",
-      icon: "fa-light",
-    },
-    { name: "Gants", desc: "gants avec des griffes", icon: "fa-hand" },
-    { name: "Bat-Grenade", desc: "Grenade explosive", icon: "fa-bomb" },
-  ]);
-});
-
-app.get("/register", (req, res) => {
-  res.sendFile(__dirname + "/public/register.html");
-});
-
-app.get("/api/me", checkAuth, (req, res) => {
-  res.json({
-    username: req.user.username,
-    id: req.user.id,
-    role: req.user.role,
-  });
-});
-
-app.get("/admin", checkAuth, checkAdmin, (req, res) => {
-  insertLog(req.user);
-  res.sendFile(__dirname + "/private/admin.html");
-});
-
-app.get("/api/admin/users", checkAuth, checkAdmin, (req, res) => {
-  const users = db.prepare("SELECT id, username, role FROM users").all();
-  res.json(users);
-});
-
-app.put("/api/admin/users/:id/role", checkAuth, checkAdmin, (req, res) => {
-  const { role } = req.body;
-  if (!role || !["ADMIN", "USER"].includes(role)) {
-    return res.status(400).send("role invalide");
-  }
-  db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, req.params.id);
-  res.json({ success: true });
-});
-
-app.get("/api/admin/logs", checkAuth, checkAdmin, (req, res) => {
-  const logs = db
-    .prepare("SELECT id, username, role, timestamp FROM logs ORDER BY id DESC")
-    .all();
-  res.json(logs);
-});
-
-app.post("/logout", (req, res) => {
-  res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
-  return res.status(401).json({ message: "logged out" });
-});
-
-app.post("/api/reports", checkAuth, (req, res) => {
-  const { message } = req.body;
-  const user_id = req.user.id;
-  try {
-    const insert = db.prepare(
-      "INSERT INTO reports (message, user_id) VALUES (?, ?)",
-    );
-    insert.run(message, user_id);
-    res.status(201).send("report saved");
-  } catch (err) {
-    res.status(500).send("error saving report");
-  }
-});
-
-app.get("/api/reports", checkAuth, (req, res) => {
-  try {
-    const reports = db
-      .prepare(
-        `
-      SELECT reports.id, reports.message, reports.user_id, users.username 
-      FROM reports 
-      JOIN users ON reports.user_id = users.id
-    `,
-      )
-      .all();
-    res.json(reports);
-  } catch (err) {
-    res.status(500).send("error fetching reports");
-  }
 });
