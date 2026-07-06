@@ -22,7 +22,7 @@ router.get("/bat-computer", isAuthenticated, (req, res) => {
     }
     const personalizedHtml = html.replace(
       '<div class="me"></div>',
-      `<div class="me">Bienvenue, Justicier, ${req.session.user.username}!</div>`
+      `<div class="me">Bienvenue, Justicier, ${req.user.username}!</div>`
     );
     res.send(personalizedHtml);
   });

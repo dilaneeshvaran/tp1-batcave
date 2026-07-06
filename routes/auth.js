@@ -1,6 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const path = require("path");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const db = require("../config/db");
 const checkAuth = require("../middlewares/checkAuth");
 const { isBlocked, recordFailure, recordSuccess } = require("../middlewares/loginLimiter");
@@ -63,34 +65,54 @@ router.post("/auth/login", async (req, res, next) => {
   if (user && (await bcrypt.compare(password, user.password_hash))) {
     recordSuccess(username);
 
-    // regenerate session to prevent session fixation attack
-    req.session.regenerate((err) => {
-      if (err) return next(err);
-      // 1. Stocker l'email ou le username dans la nouvelle session :
-      req.session.user = {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-      };
-      req.session.ip = req.ip;
-      req.session.userAgent = req.headers["user-agent"];
-      // 2. Sauvegarder explicitement : req.session.save()
-      req.session.save((err) => {
-        if (err) return next(err);
+    // generate jwt access token (15 sec expiry)
+    const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+    const tokenPayload = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      ip: req.ip,
+      userAgent: req.headers["user-agent"] || "",
+    };
+    
+    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
 
-        // audit log for successful login
-        try {
-          db.prepare(
-            "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
-          ).run(user.username, "LOGIN", req.ip, req.headers["user-agent"] || "", new Date().toISOString());
-        } catch (auditErr) {
-          console.error("failed to log successful login", auditErr);
-        }
+    const refreshToken = crypto.randomBytes(40).toString("hex");
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-        // 3. Rediriger l'utilisateur vers le tableau de bord (/bat-computer)
-        res.redirect("/bat-computer");
-      });
+    try {
+      db.prepare(
+        "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+      ).run(refreshToken, user.id, expiresAt, new Date().toISOString());
+    } catch (dbErr) {
+      console.error("failed to save refresh token", dbErr);
+      return next(dbErr);
+    }
+
+    res.cookie("access_token", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 1000,
     });
+
+    res.cookie("refresh_token", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+    });
+
+    // audit log for successful login
+    try {
+      db.prepare(
+        "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
+      ).run(user.username, "LOGIN", req.ip, req.headers["user-agent"] || "", new Date().toISOString());
+    } catch (auditErr) {
+      console.error("failed to log successful login", auditErr);
+    }
+
+    res.redirect("/bat-computer");
   } else {
     recordFailure(username);
     const { blocked: nowBlocked, remainingMs: newRemainingMs } =
@@ -120,7 +142,42 @@ router.get("/api/me", checkAuth, (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-  const username = req.session && req.session.user ? req.session.user.username : null;
+  const refreshToken = req.cookies.refresh_token;
+  let username = null;
+
+  //  get username from access token
+  const token = req.cookies.access_token;
+  if (token) {
+    try {
+      const decoded = jwt.decode(token);
+      if (decoded && decoded.username) {
+        username = decoded.username;
+      }
+    } catch (e) {}
+  }
+
+  // fallback username via refresh token before deleting it
+  if (!username && refreshToken) {
+    try {
+      const row = db.prepare(
+        "SELECT users.username FROM refresh_tokens JOIN users ON refresh_tokens.user_id = users.id WHERE refresh_tokens.token = ?"
+      ).get(refreshToken);
+      if (row) {
+        username = row.username;
+      }
+    } catch (e) {
+      console.error("failed to query username from refresh token", e);
+    }
+  }
+
+  if (refreshToken) {
+    try {
+      db.prepare("DELETE FROM refresh_tokens WHERE token = ?").run(refreshToken);
+    } catch (e) {
+      console.error("failed to delete refresh token", e);
+    }
+  }
+
   if (username) {
     try {
       db.prepare(
@@ -130,15 +187,50 @@ router.post("/logout", (req, res) => {
       console.error("failed to log voluntary logout", auditErr);
     }
   }
-  req.session.destroy((err) => {
-    res.clearCookie("bat_identity");
-    res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
-    return res.status(401).json({ message: "logged out" });
-  });
+
+  res.clearCookie("access_token");
+  res.clearCookie("refresh_token");
+  res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
+  return res.status(401).json({ message: "logged out" });
 });
 
 router.get("/auth/logout", (req, res) => {
-  const username = req.session && req.session.user ? req.session.user.username : null;
+  const refreshToken = req.cookies.refresh_token;
+  let username = null;
+
+  // get username from access token
+  const token = req.cookies.access_token;
+  if (token) {
+    try {
+      const decoded = jwt.decode(token);
+      if (decoded && decoded.username) {
+        username = decoded.username;
+      }
+    } catch (e) {}
+  }
+
+  // fallback username via refresh token before deleting it
+  if (!username && refreshToken) {
+    try {
+      const row = db.prepare(
+        "SELECT users.username FROM refresh_tokens JOIN users ON refresh_tokens.user_id = users.id WHERE refresh_tokens.token = ?"
+      ).get(refreshToken);
+      if (row) {
+        username = row.username;
+      }
+    } catch (e) {
+      console.error("failed to query username from refresh token", e);
+    }
+  }
+
+  if (refreshToken) {
+    try {
+      db.prepare("DELETE FROM refresh_tokens WHERE token = ?").run(refreshToken);
+    } catch (e) {
+      console.error("failed to delete refresh token", e);
+    }
+  }
+
   if (username) {
     try {
       db.prepare(
@@ -148,10 +240,10 @@ router.get("/auth/logout", (req, res) => {
       console.error("failed to log voluntary logout", auditErr);
     }
   }
-  req.session.destroy((err) => {
-    res.clearCookie("bat_identity");
-    res.redirect("/auth/login");
-  });
+
+  res.clearCookie("access_token");
+  res.clearCookie("refresh_token");
+  res.redirect("/auth/login");
 });
 
 module.exports = router;

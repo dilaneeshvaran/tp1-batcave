@@ -1,6 +1,7 @@
+const { verifyAndRefreshTokens } = require("./tokenAuth");
+
 const isAuthenticated = (req, res, next) => {
-  if (req.session && req.session.user) {
-    req.user = req.session.user;
+  if (verifyAndRefreshTokens(req, res)) {
     return next();
   }
   res.status(401);
