@@ -62,6 +62,9 @@ const verifyAndRefreshTokens = (req, res) => {
             maxAge: 15 * 1000,
           });
 
+          res.setHeader("X-Token-Refreshed", "true");
+          console.log(`token d'accès rafraichi de manière transparente pour l'utilisateur : ${user.username}`);
+
           req.user = tokenPayload;
           return true;
         }
