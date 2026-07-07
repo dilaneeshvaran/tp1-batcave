@@ -96,7 +96,21 @@ router.post("/auth/login", async (req, res, next) => {
       maxAge: 15 * 1000,
     });
 
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 1000,
+    });
+
     res.cookie("refresh_token", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+    });
+
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
@@ -142,11 +156,11 @@ router.get("/api/me", checkAuth, (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-  const refreshToken = req.cookies.refresh_token;
+  const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
   let username = null;
 
   //  get username from access token
-  const token = req.cookies.access_token;
+  const token = req.cookies.access_token || req.cookies.accessToken;
   if (token) {
     try {
       const decoded = jwt.decode(token);
@@ -189,17 +203,19 @@ router.post("/logout", (req, res) => {
   }
 
   res.clearCookie("access_token");
+  res.clearCookie("accessToken");
   res.clearCookie("refresh_token");
+  res.clearCookie("refreshToken");
   res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
   return res.status(401).json({ message: "logged out" });
 });
 
 router.get("/auth/logout", (req, res) => {
-  const refreshToken = req.cookies.refresh_token;
+  const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
   let username = null;
 
   // get username from access token
-  const token = req.cookies.access_token;
+  const token = req.cookies.access_token || req.cookies.accessToken;
   if (token) {
     try {
       const decoded = jwt.decode(token);
@@ -242,8 +258,72 @@ router.get("/auth/logout", (req, res) => {
   }
 
   res.clearCookie("access_token");
+  res.clearCookie("accessToken");
   res.clearCookie("refresh_token");
+  res.clearCookie("refreshToken");
   res.redirect("/auth/login");
+});
+
+router.post("/api/auth/refresh", (req, res) => {
+  const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ error: "Refresh token missing" });
+  }
+
+  try {
+    const row = db.prepare("SELECT * FROM refresh_tokens WHERE token = ?").get(refreshToken);
+    if (!row) {
+      return res.status(401).json({ error: "Invalid refresh token" });
+    }
+
+    const isExpired = new Date(row.expires_at) < new Date();
+    if (isExpired) {
+      // clean up expired refresh token
+      db.prepare("DELETE FROM refresh_tokens WHERE token = ?").run(refreshToken);
+      res.clearCookie("access_token");
+      res.clearCookie("accessToken");
+      res.clearCookie("refresh_token");
+      res.clearCookie("refreshToken");
+      return res.status(401).json({ error: "Refresh token expired" });
+    }
+
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(row.user_id);
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    // generate jwt access token (15 sec expiry)
+    const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+    const tokenPayload = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      ip: req.ip,
+      userAgent: req.headers["user-agent"] || "",
+    };
+
+    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
+
+    res.cookie("access_token", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 1000,
+    });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 1000,
+    });
+
+    return res.status(200).json({ message: "Token refreshed successfully" });
+  } catch (err) {
+    console.error("Error during token refresh", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 module.exports = router;

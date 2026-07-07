@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 
 const sessionSecurity = (req, res, next) => {
-  const token = req.cookies.access_token;
+  const token = req.cookies.access_token || req.cookies.accessToken;
   if (token) {
     try {
       const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
@@ -32,7 +32,7 @@ const sessionSecurity = (req, res, next) => {
           }
 
           // delete refresh token to block hijacked session
-          const refreshToken = req.cookies.refresh_token;
+          const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
           if (refreshToken) {
             try {
               db.prepare("DELETE FROM refresh_tokens WHERE token = ?").run(refreshToken);
@@ -42,7 +42,9 @@ const sessionSecurity = (req, res, next) => {
           }
 
           res.clearCookie("access_token");
+          res.clearCookie("accessToken");
           res.clearCookie("refresh_token");
+          res.clearCookie("refreshToken");
           
           return res
             .status(403)
@@ -54,7 +56,9 @@ const sessionSecurity = (req, res, next) => {
     } catch (err) {
       console.warn("Invalid access token in sessionSecurity check", err.message);
       res.clearCookie("access_token");
+      res.clearCookie("accessToken");
       res.clearCookie("refresh_token");
+      res.clearCookie("refreshToken");
     }
   }
   next();

@@ -5,7 +5,7 @@ const verifyAndRefreshTokens = (req, res) => {
   const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
   
   //  checking access token
-  const accessToken = req.cookies.access_token;
+  const accessToken = req.cookies.access_token || req.cookies.accessToken;
   if (accessToken) {
     try {
       const decoded = jwt.verify(accessToken, jwtSecret);
@@ -18,7 +18,7 @@ const verifyAndRefreshTokens = (req, res) => {
   }
 
   // checking refresh token
-  const refreshToken = req.cookies.refresh_token;
+  const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
   if (refreshToken) {
     try {
       const row = db.prepare("SELECT * FROM refresh_tokens WHERE token = ?").get(refreshToken);
@@ -28,7 +28,9 @@ const verifyAndRefreshTokens = (req, res) => {
           // clean up expired refresh token
           db.prepare("DELETE FROM refresh_tokens WHERE token = ?").run(refreshToken);
           res.clearCookie("access_token");
+          res.clearCookie("accessToken");
           res.clearCookie("refresh_token");
+          res.clearCookie("refreshToken");
           return false;
         }
 
@@ -47,6 +49,13 @@ const verifyAndRefreshTokens = (req, res) => {
 
           // set new access token cookie
           res.cookie("access_token", newAccessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+            maxAge: 15 * 1000,
+          });
+
+          res.cookie("accessToken", newAccessToken, {
             httpOnly: true,
             secure: true,
             sameSite: "strict",
