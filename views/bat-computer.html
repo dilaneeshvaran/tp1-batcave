@@ -29,8 +29,9 @@
     </main>
 
     <script src="/logout.js"></script>
+    <script src="/dashboard.js"></script>
     <script>
-      fetch("/api/secrets")
+      customFetch("/api/secrets")
         .then((response) => response.json())
         .then((data) => {
           console.log("Secrets:", data);
@@ -55,7 +56,7 @@
           console.error("Error fetching secrets:", error);
         });
 
-      fetch("/api/me")
+      customFetch("/api/me")
         .then((response) => response.json())
         .then((data) => {
           document.querySelector(".me").textContent =
@@ -74,7 +75,7 @@
       document.getElementById("add-note-btn").addEventListener("click", () => {
         const message = prompt("entrez note de mission :");
         if (message) {
-          fetch("/api/reports", {
+          customFetch("/api/reports", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -91,7 +92,7 @@
       });
 
       function loadReports() {
-        fetch("/api/reports")
+        customFetch("/api/reports")
           .then((response) => response.json())
           .then((data) => {
             document.getElementById("notes").innerHTML = `

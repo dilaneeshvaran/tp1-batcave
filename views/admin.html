@@ -83,11 +83,12 @@
     </main>
 
     <script src="/logout.js"></script>
+    <script src="/dashboard.js"></script>
     <script>
       document.getElementById("btn-logout").addEventListener("click", logout);
 
       async function loadUsers() {
-        const res = await fetch("/api/admin/users");
+        const res = await customFetch("/api/admin/users");
         if (!res.ok) {
           document.getElementById("users-body").innerHTML =
             `<tr><td colspan="4" style="color:red;">Acces refuse (403)</td></tr>`;
@@ -119,7 +120,7 @@
       async function updateRole(userId) {
         const select = document.getElementById(`role-select-${userId}`);
         const role = select.value;
-        const res = await fetch(`/api/admin/users/${userId}/role`, {
+        const res = await customFetch(`/api/admin/users/${userId}/role`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ role }),
@@ -133,7 +134,7 @@
       }
 
       async function loadLogs() {
-        const res = await fetch("/api/admin/logs");
+        const res = await customFetch("/api/admin/logs");
         if (!res.ok) {
           document.getElementById("logs-body").innerHTML =
             `<tr><td colspan="4" style="color:red;">acces refusé</td></tr>`;
@@ -160,7 +161,7 @@
       }
 
       async function loadAuditLogs() {
-        const res = await fetch("/api/admin/audit-logs");
+        const res = await customFetch("/api/admin/audit-logs");
         if (!res.ok) {
           document.getElementById("audit-body").innerHTML =
             `<tr><td colspan="6" style="color:red;">accès refusé</td></tr>`;
