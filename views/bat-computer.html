@@ -21,6 +21,11 @@
       <h2>Arsenal Top Secret</h2>
       <div id="secrets"></div>
 
+      <h2>Commandes Critiques Batmobile</h2>
+      <div id="batmobile-console" class="batmobile-console-container locked">
+        <div style="text-align: center; padding: 20px;">Initialisation de la liaison Batmobile...</div>
+      </div>
+
       <h2>notes de mission</h2>
       <button class="btn-primary" id="add-note-btn">
         ajouter une note de mission
@@ -135,6 +140,162 @@
       }
 
       loadReports();
+      loadBatmobileConsole();
+
+      function loadBatmobileConsole() {
+        const consoleEl = document.getElementById("batmobile-console");
+        customFetch("/api/user/secret-batmobile")
+          .then((res) => {
+            if (res.status === 403) {
+              return res.json().then((data) => {
+                if (data.need2FA) {
+                  render2FAForm(consoleEl);
+                } else {
+                  consoleEl.innerHTML = `<div class="batmobile-alert error">${data.error || "Accès refusé."}</div>`;
+                }
+              });
+            } else if (res.ok) {
+              return res.json().then((data) => {
+                renderBatmobileDashboard(consoleEl, data);
+              });
+            } else {
+              consoleEl.innerHTML = `<div class="batmobile-alert error">Erreur lors de la liaison de données. Status: ${res.status}</div>`;
+            }
+          })
+          .catch((err) => {
+            console.error("error loading Batmobile console:", err);
+            consoleEl.innerHTML = `<div class="batmobile-alert error">Erreur de liaison réseau avec la Batmobile.</div>`;
+          });
+      }
+
+      function render2FAForm(container) {
+        container.className = "batmobile-console-container locked";
+        container.innerHTML = `
+          <div class="batmobile-header">
+            <h3>Système de Double Validation requis</h3>
+            <span class="batmobile-status">Verrouillé</span>
+          </div>
+          <p style="margin-bottom: 20px; font-size: 0.9em; opacity: 0.9;">Pour accéder aux commandes critiques de la Batmobile, Alfred doit valider votre identité. Demandez un code de sécurité temporaire.</p>
+          <div class="batmobile-2fa-form">
+            <button type="button" id="btn-request-code" class="batmobile-btn btn-request">Demander le code à Alfred</button>
+            <input type="text" id="input-2fa-code" class="batmobile-input-code" placeholder="000000" maxlength="6" autocomplete="off" />
+            <button type="button" id="btn-verify-code" class="batmobile-btn">Valider le code secret</button>
+            <div id="2fa-message" class="batmobile-alert info" style="display: none;"></div>
+          </div>
+        `;
+
+        document.getElementById("btn-request-code").addEventListener("click", () => {
+          const msgDiv = document.getElementById("2fa-message");
+          msgDiv.style.display = "block";
+          msgDiv.className = "batmobile-alert info";
+          msgDiv.textContent = "Demande en cours...";
+
+          customFetch("/api/auth/2fa/request", { method: "POST" })
+            .then(async (res) => {
+              const data = await res.json();
+              if (res.ok) {
+                msgDiv.className = "batmobile-alert success";
+                msgDiv.textContent = data.message || "Code envoyé.";
+              } else {
+                msgDiv.className = "batmobile-alert error";
+                msgDiv.textContent = data.error || "Une erreur est survenue.";
+              }
+            })
+            .catch(() => {
+              msgDiv.className = "batmobile-alert error";
+              msgDiv.textContent = "erreur de communication avec la Batcave.";
+            });
+        });
+
+        document.getElementById("btn-verify-code").addEventListener("click", () => {
+          const code = document.getElementById("input-2fa-code").value;
+          const msgDiv = document.getElementById("2fa-message");
+          if (!code || code.length < 6) {
+            msgDiv.style.display = "block";
+            msgDiv.className = "batmobile-alert error";
+            msgDiv.textContent = "veuillez entrer un code à 6 chiffres.";
+            return;
+          }
+
+          msgDiv.style.display = "block";
+          msgDiv.className = "batmobile-alert info";
+          msgDiv.textContent = "Vérification...";
+
+          customFetch("/api/auth/2fa/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code })
+          })
+            .then(async (res) => {
+              const data = await res.json();
+              if (res.ok) {
+                msgDiv.className = "batmobile-alert success";
+                msgDiv.textContent = data.message;
+                setTimeout(() => {
+                  loadBatmobileConsole();
+                }, 1000);
+              } else {
+                msgDiv.className = "batmobile-alert error";
+                msgDiv.textContent = data.error || "Code invalide.";
+              }
+            })
+            .catch(() => {
+              msgDiv.className = "batmobile-alert error";
+              msgDiv.textContent = "erreur de communication lors de la validation.";
+            });
+        });
+      }
+
+      function renderBatmobileDashboard(container, data) {
+        container.className = "batmobile-console-container";
+        container.innerHTML = `
+          <div class="batmobile-header">
+            <h3>Console Batmobile active</h3>
+            <span class="batmobile-status" style="color: #00ffcc;">${data.status}</span>
+          </div>
+          <p style="margin-bottom: 20px; font-size: 0.9em; opacity: 0.8;">Liaison établie : ${data.location}</p>
+          <div class="batmobile-grid">
+            <div class="batmobile-stat-card">
+              <div class="batmobile-stat-title">Système d'armes</div>
+              <div class="batmobile-stat-val" style="color: #ffffff;">Batarangs: ${data.weapons.batarangs}</div>
+              <div class="batmobile-stat-val" style="font-size: 1em; font-weight: normal; margin-top: 5px; opacity: 0.8; color: #ffffff;">Lasers: ${data.weapons.lasers}</div>
+            </div>
+            <div class="batmobile-stat-card">
+              <div class="batmobile-stat-title">Moteur à turbine</div>
+              <div class="batmobile-stat-val" style="color: #ffffff;">Temp: ${data.engine.temperature}</div>
+              <div class="batmobile-stat-val" style="font-size: 1em; font-weight: normal; margin-top: 5px; opacity: 0.8; color: #ffffff;">Carburant: ${data.engine.fuel}</div>
+            </div>
+            <div class="batmobile-stat-card">
+              <div class="batmobile-stat-title">Propulseurs</div>
+              <div class="batmobile-stat-val" id="thruster-status" style="color: #00ffcc;">${data.engine.thrusters}</div>
+              <button type="button" id="btn-activate-thrusters" class="batmobile-btn btn-verified" style="padding: 6px 12px; font-size: 0.85em; margin-top: 10px; width: 100%;">Activer</button>
+            </div>
+          </div>
+          <div style="margin-top: 25px; text-align: center;">
+            <div class="batmobile-alert success" style="font-size: 0.85em; display: inline-block; width: auto; margin-top: 0;">
+              Jeton de Commande Critique : <strong>${data.criticalCommandToken}</strong>
+            </div>
+          </div>
+        `;
+
+        document.getElementById("btn-activate-thrusters").addEventListener("click", () => {
+          const statusVal = document.getElementById("thruster-status");
+          const btn = document.getElementById("btn-activate-thrusters");
+          if (statusVal.textContent === "Inactif") {
+            statusVal.textContent = "ACTIF (POST-COMBUSTION)";
+            statusVal.style.color = "#ff3333";
+            btn.textContent = "Désactiver";
+            btn.style.backgroundColor = "#ff3333";
+            btn.style.color = "#ffffff";
+          } else {
+            statusVal.textContent = "Inactif";
+            statusVal.style.color = "#00ffcc";
+            btn.textContent = "Activer";
+            btn.style.backgroundColor = "#00ffcc";
+            btn.style.color = "#000411";
+          }
+        });
+      }
 
       document.getElementById("change-password-form").addEventListener("submit", (e) => {
         e.preventDefault();

@@ -4,6 +4,7 @@ const fs = require("fs");
 const db = require("../config/db");
 const checkAuth = require("../middlewares/checkAuth");
 const isAuthenticated = require("../middlewares/authCheck");
+const check2FA = require("../middlewares/check2FA");
 
 const router = express.Router();
 
@@ -73,6 +74,27 @@ router.get("/api/reports", checkAuth, (req, res) => {
   } catch (err) {
     res.status(500).send("error fetching reports");
   }
+});
+
+// protected command center endpoint
+router.get("/api/user/secret-batmobile", checkAuth, check2FA, (req, res) => {
+  insertLog(req.user);
+  res.json({
+    message: "Système de contrôle de la Batmobile déverrouillé.",
+    status: "PRÊT",
+    location: "Batcave (secteur B-4)",
+    weapons: {
+      batarangs: "Armé",
+      lasers: "Veille",
+      grapple: "Prêt",
+    },
+    engine: {
+      temperature: "95°C",
+      fuel: "78%",
+      thrusters: "Inactif"
+    },
+    criticalCommandToken: "BAT-SECRET-COMMAND-EXECUTE-9912"
+  });
 });
 
 module.exports = router;

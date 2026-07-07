@@ -391,3 +391,175 @@ body.dashboard {
   border-color: #fdebd0;
 }
 
+.batmobile-console-container {
+  background: linear-gradient(135deg, #050d26 0%, #000411 100%);
+  color: #00ffcc;
+  border: 2px solid #00ffcc;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+  font-family: 'Courier New', Courier, monospace;
+  padding: 24px;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  transition: all 0.3s ease;
+}
+
+.batmobile-console-container.locked {
+  background: linear-gradient(135deg, #1c0505 0%, #080000 100%);
+  color: #ff3333;
+  border-color: #ff3333;
+  box-shadow: 0 0 20px rgba(255, 51, 51, 0.2);
+}
+
+.batmobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.batmobile-header h3 {
+  margin: 0;
+  font-size: 1.5em;
+  letter-spacing: 1px;
+}
+
+.batmobile-status {
+  font-weight: bold;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.batmobile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.batmobile-stat-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  transition: transform 0.2s ease;
+}
+
+.batmobile-stat-card:hover {
+  transform: scale(1.02);
+}
+
+.batmobile-stat-title {
+  font-size: 0.85em;
+  opacity: 0.7;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.batmobile-stat-val {
+  font-size: 1.4em;
+  font-weight: bold;
+}
+
+.batmobile-2fa-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 450px;
+  margin: 0 auto;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.batmobile-input-code {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid #ff3333;
+  color: #ff3333;
+  font-size: 2em;
+  text-align: center;
+  letter-spacing: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 260px;
+  outline: none;
+  font-weight: bold;
+  font-family: inherit;
+}
+
+.batmobile-input-code:focus {
+  box-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+}
+
+.batmobile-btn {
+  background-color: #ff3333;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.batmobile-btn:hover {
+  background-color: #cc0000;
+  box-shadow: 0 0 10px rgba(255, 51, 51, 0.4);
+}
+
+.batmobile-btn.btn-request {
+  background-color: transparent;
+  color: #ff3333;
+  border: 1.5px solid #ff3333;
+  margin-bottom: 10px;
+}
+
+.batmobile-btn.btn-request:hover {
+  background-color: rgba(255, 51, 51, 0.1);
+}
+
+.batmobile-btn.btn-verified {
+  background-color: #00ffcc;
+  color: #000411;
+  margin-top: 15px;
+}
+
+.batmobile-btn.btn-verified:hover {
+  background-color: #00cc99;
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+}
+
+.batmobile-alert {
+  padding: 12px 15px;
+  border-radius: 6px;
+  font-size: 0.9em;
+  margin-top: 10px;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.batmobile-alert.info {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.batmobile-alert.success {
+  background: rgba(0, 255, 204, 0.1);
+  border: 1px solid #00ffcc;
+  color: #00ffcc;
+}
+
+.batmobile-alert.error {
+  background: rgba(255, 51, 51, 0.1);
+  border: 1px solid #ff3333;
+  color: #ff3333;
+}
+

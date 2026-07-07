@@ -47,12 +47,25 @@ const verifyAndRefreshTokens = (req, res) => {
         // fetch user from database to ensure they still exist
         const user = db.prepare("SELECT * FROM users WHERE id = ?").get(row.user_id);
         if (user) {
+          let is2FAVerified = false;
+          if (accessToken) {
+            try {
+              const decoded = jwt.verify(accessToken, jwtSecret, { ignoreExpiration: true });
+              if (decoded && decoded.is2FAVerified === true) {
+                is2FAVerified = true;
+              }
+            } catch (err) {
+              console.log("echec de la verification de l'ancien access token pour l'heritage 2fa:", err.message);
+            }
+          }
+
           const tokenPayload = {
             id: user.id,
             username: user.username,
             role: user.role,
             ip: req.ip,
             userAgent: req.headers["user-agent"] || "",
+            is2FAVerified,
           };
 
           const newAccessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
@@ -73,7 +86,7 @@ const verifyAndRefreshTokens = (req, res) => {
           });
 
           res.setHeader("X-Token-Refreshed", "true");
-          console.log(`token d'accès rafraichi de manière transparente pour l'utilisateur : ${user.username}`);
+          console.log(`token d'accès rafraichi de manière transparente pour l'utilisateur : ${user.username} (2fa: ${is2FAVerified})`);
 
           req.user = tokenPayload;
           return true;

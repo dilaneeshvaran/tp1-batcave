@@ -9,6 +9,9 @@ const { isBlocked, recordFailure, recordSuccess } = require("../middlewares/logi
 
 const router = express.Router();
 
+// temporary inmemory store for 2fa validation code
+const twoFactorCodes = new Map();
+
 router.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../views/index.html"));
 });
@@ -73,6 +76,7 @@ router.post("/auth/login", async (req, res, next) => {
       role: user.role,
       ip: req.ip,
       userAgent: req.headers["user-agent"] || "",
+      is2FAVerified: false,
     };
     
     const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
@@ -316,12 +320,27 @@ router.post("/api/auth/refresh", (req, res) => {
 
     // generate jwt access token (15 sec expiry)
     const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+    
+    let is2FAVerified = false;
+    const oldAccessToken = req.cookies.access_token || req.cookies.accessToken;
+    if (oldAccessToken) {
+      try {
+        const decoded = jwt.verify(oldAccessToken, jwtSecret, { ignoreExpiration: true });
+        if (decoded && decoded.is2FAVerified === true) {
+          is2FAVerified = true;
+        }
+      } catch (err) {
+        console.log("echec de la verification de l'ancien access token pour l'heritage 2fa lors du refresh:", err.message);
+      }
+    }
+
     const tokenPayload = {
       id: user.id,
       username: user.username,
       role: user.role,
       ip: req.ip,
       userAgent: req.headers["user-agent"] || "",
+      is2FAVerified,
     };
 
     const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
@@ -395,6 +414,95 @@ router.post("/api/auth/change-password", checkAuth, async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la modification du mot de passe", err);
     return res.status(500).json({ error: "Une erreur interne est survenue." });
+  }
+});
+
+// route to ask alfred for a 2fa validation code
+router.post("/api/auth/2fa/request", checkAuth, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const username = req.user.username;
+    
+    // generate 6 digit random code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000;
+    
+    twoFactorCodes.set(userId, { code, expiresAt });
+    
+    console.log(`\n==================================================`);
+    console.log(`[ALFRED 2FA] CODE GENERE POUR : ${username} : ${code}`);
+    console.log(`==================================================\n`);
+    
+    return res.status(200).json({
+      message: "code de securite envoye par alfred (consultez la console du serveur)."
+    });
+  } catch (err) {
+    console.error("erreur lors de la demande 2fa", err);
+    return res.status(500).json({ error: "impossible de generer le code de securite." });
+  }
+});
+
+// route to verify the 2fa code and obtain a jwt access token with is2faverified = true
+router.post("/api/auth/2fa/verify", checkAuth, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: "code de validation requis." });
+    }
+    
+    const record = twoFactorCodes.get(userId);
+    if (!record) {
+      return res.status(400).json({ error: "aucun code n'a été demandé pour cet utilisateur." });
+    }
+    
+    if (Date.now() > record.expiresAt) {
+      twoFactorCodes.delete(userId);
+      return res.status(400).json({ error: "le code a expiré. veuillez en demander un nouveau." });
+    }
+    
+    if (record.code !== code.trim()) {
+      return res.status(400).json({ error: "code incorrect. veuillez réessayer." });
+    }
+    
+    // success: remove code from cache
+    twoFactorCodes.delete(userId);
+    
+    // generate upgraded jwt access token (is2faverified: true)
+    const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+    const tokenPayload = {
+      id: req.user.id,
+      username: req.user.username,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers["user-agent"] || "",
+      is2FAVerified: true,
+    };
+    
+    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
+    
+    res.cookie("access_token", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 1000,
+    });
+    
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 1000,
+    });
+    
+    return res.status(200).json({
+      success: true,
+      message: "double validation reussie ! acces accorde aux commandes critiques."
+    });
+  } catch (err) {
+    console.error("erreur lors de la verification 2fa", err);
+    return res.status(500).json({ error: "une erreur est survenue lors de la validation." });
   }
 });
 
