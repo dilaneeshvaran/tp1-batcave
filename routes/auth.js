@@ -326,4 +326,42 @@ router.post("/api/auth/refresh", (req, res) => {
   }
 });
 
+router.post("/api/auth/change-password", checkAuth, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: "Tous les champs sont requis." });
+  }
+
+  try {
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ error: "L'ancien mot de passe est incorrect." });
+    }
+
+    // anssi 
+    const anssiRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{12,}$/;
+    if (!anssiRegex.test(newPassword)) {
+      return res.status(400).json({
+        error: "nouveau mot de passe ne respecte pas les critères de robustesse anssi (au moins 12 caractères, 1 majuscule, 1 minuscule, 1 chiffre et 1 caractère spécial)."
+      });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(newHash, req.user.id);
+
+    return res.status(200).json({ message: "Mot de passe modifié avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la modification du mot de passe", err);
+    return res.status(500).json({ error: "Une erreur interne est survenue." });
+  }
+});
+
 module.exports = router;
+
