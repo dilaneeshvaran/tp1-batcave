@@ -251,23 +251,23 @@
         container.innerHTML = `
           <div class="batmobile-header">
             <h3>Console Batmobile active</h3>
-            <span class="batmobile-status" style="color: #00ffcc;">${data.status}</span>
+            <span class="batmobile-status" style="color: #0d5c3a;">${data.status}</span>
           </div>
           <p style="margin-bottom: 20px; font-size: 0.9em; opacity: 0.8;">Liaison établie : ${data.location}</p>
           <div class="batmobile-grid">
             <div class="batmobile-stat-card">
               <div class="batmobile-stat-title">Système d'armes</div>
-              <div class="batmobile-stat-val" style="color: #ffffff;">Batarangs: ${data.weapons.batarangs}</div>
-              <div class="batmobile-stat-val" style="font-size: 1em; font-weight: normal; margin-top: 5px; opacity: 0.8; color: #ffffff;">Lasers: ${data.weapons.lasers}</div>
+              <div class="batmobile-stat-val">Batarangs: ${data.weapons.batarangs}</div>
+              <div class="batmobile-stat-val" style="font-size: 1em; font-weight: normal; margin-top: 5px; opacity: 0.8;">Lasers: ${data.weapons.lasers}</div>
             </div>
             <div class="batmobile-stat-card">
               <div class="batmobile-stat-title">Moteur à turbine</div>
-              <div class="batmobile-stat-val" style="color: #ffffff;">Temp: ${data.engine.temperature}</div>
-              <div class="batmobile-stat-val" style="font-size: 1em; font-weight: normal; margin-top: 5px; opacity: 0.8; color: #ffffff;">Carburant: ${data.engine.fuel}</div>
+              <div class="batmobile-stat-val">Temp: ${data.engine.temperature}</div>
+              <div class="batmobile-stat-val" style="font-size: 1em; font-weight: normal; margin-top: 5px; opacity: 0.8;">Carburant: ${data.engine.fuel}</div>
             </div>
             <div class="batmobile-stat-card">
               <div class="batmobile-stat-title">Propulseurs</div>
-              <div class="batmobile-stat-val" id="thruster-status" style="color: #00ffcc;">${data.engine.thrusters}</div>
+              <div class="batmobile-stat-val" id="thruster-status" style="color: #666;">${data.engine.thrusters}</div>
               <button type="button" id="btn-activate-thrusters" class="batmobile-btn btn-verified" style="padding: 6px 12px; font-size: 0.85em; margin-top: 10px; width: 100%;">Activer</button>
             </div>
           </div>
@@ -283,16 +283,16 @@
           const btn = document.getElementById("btn-activate-thrusters");
           if (statusVal.textContent === "Inactif") {
             statusVal.textContent = "ACTIF (POST-COMBUSTION)";
-            statusVal.style.color = "#ff3333";
+            statusVal.style.color = "#c0392b";
             btn.textContent = "Désactiver";
-            btn.style.backgroundColor = "#ff3333";
+            btn.style.backgroundColor = "#640a00";
             btn.style.color = "#ffffff";
           } else {
             statusVal.textContent = "Inactif";
-            statusVal.style.color = "#00ffcc";
+            statusVal.style.color = "#666";
             btn.textContent = "Activer";
-            btn.style.backgroundColor = "#00ffcc";
-            btn.style.color = "#000411";
+            btn.style.backgroundColor = "#00082f";
+            btn.style.color = "#ffffff";
           }
         });
       }

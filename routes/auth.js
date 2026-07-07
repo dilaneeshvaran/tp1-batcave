@@ -151,7 +151,7 @@ router.post("/auth/login", async (req, res, next) => {
   }
 });
 
-router.get("/api/me", checkAuth, (req, res) => {
+router.get(["/api/me", "/api/user/me"], checkAuth, (req, res) => {
   res.json({
     username: req.user.username,
     id: req.user.id,

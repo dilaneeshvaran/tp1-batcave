@@ -297,18 +297,7 @@ body.dashboard {
 .change-password-section {
   margin-top: 40px;
   margin-bottom: 40px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e1e8ed;
-  overflow: hidden;
   max-width: 500px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.change-password-section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .form-group {
@@ -318,104 +307,87 @@ body.dashboard {
 }
 
 .form-group label {
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #00082f;
-  font-size: 0.95em;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
 }
 
 .form-control {
-  padding: 12px 14px;
-  border: 1.5px solid #dcdcdc;
-  border-radius: 6px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   font-size: 0.95em;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   outline: none;
 }
 
 .form-control:focus {
-  border-color: #000c4f;
-  box-shadow: 0 0 0 3px rgba(0, 12, 79, 0.15);
+  border-color: #00082f;
 }
 
 .password-requirements {
   font-size: 0.82em;
-  color: #667085;
+  color: #666;
   margin-top: 6px;
   line-height: 1.4;
 }
 
 .btn-submit {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   font-size: 1em;
-  font-weight: 600;
-  border-radius: 6px;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.btn-submit:active {
-  transform: scale(0.98);
+  font-weight: bold;
+  border-radius: 4px;
 }
 
 .message-banner {
-  padding: 12px;
-  border-radius: 6px;
+  padding: 10px;
+  border-radius: 4px;
   font-size: 0.9em;
-  font-weight: 500;
+  font-weight: bold;
   margin-top: 15px;
   text-align: center;
   border: 1px solid transparent;
-  transition: all 0.3s ease;
 }
 
 .message-banner.success {
-  background-color: #eafaf1;
-  color: #2ecc71;
-  border-color: #d1f2e1;
+  background-color: #e6f4ee;
+  color: #0d5c3a;
+  border-color: #ccc;
 }
 
 .message-banner.error {
-  background-color: #fdedec;
-  color: #e74c3c;
-  border-color: #fadbd8;
+  background-color: #fde8e6;
+  color: #c0392b;
+  border-color: #ccc;
 }
 
 .message-banner.info {
-  background-color: #fef9e7;
-  color: #d35400;
-  border-color: #fdebd0;
+  background-color: #eafaf1;
+  color: #000000;
+  border-color: #ccc;
 }
 
 .batmobile-console-container {
-  background: linear-gradient(135deg, #050d26 0%, #000411 100%);
-  color: #00ffcc;
-  border: 2px solid #00ffcc;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
-  font-family: 'Courier New', Courier, monospace;
-  padding: 24px;
+  background: #ffffff;
+  color: #333333;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
   margin-top: 20px;
   margin-bottom: 40px;
-  transition: all 0.3s ease;
 }
 
 .batmobile-console-container.locked {
-  background: linear-gradient(135deg, #1c0505 0%, #080000 100%);
-  color: #ff3333;
-  border-color: #ff3333;
-  box-shadow: 0 0 20px rgba(255, 51, 51, 0.2);
+  background: #fde8e6;
+  color: #333333;
+  border-color: #640a00;
 }
 
 .batmobile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #ccc;
   padding-bottom: 12px;
   margin-bottom: 20px;
 }
@@ -423,14 +395,16 @@ body.dashboard {
 .batmobile-header h3 {
   margin: 0;
   font-size: 1.5em;
-  letter-spacing: 1px;
 }
 
 .batmobile-status {
   font-weight: bold;
   font-size: 1.2em;
   text-transform: uppercase;
-  letter-spacing: 2px;
+}
+
+.locked .batmobile-status {
+  color: #c0392b;
 }
 
 .batmobile-grid {
@@ -440,15 +414,10 @@ body.dashboard {
 }
 
 .batmobile-stat-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f4f4f4;
+  border: 1px solid #ccc;
   border-radius: 8px;
   padding: 16px;
-  transition: transform 0.2s ease;
-}
-
-.batmobile-stat-card:hover {
-  transform: scale(1.02);
 }
 
 .batmobile-stat-title {
@@ -456,6 +425,7 @@ body.dashboard {
   opacity: 0.7;
   text-transform: uppercase;
   margin-bottom: 8px;
+  color: #666;
 }
 
 .batmobile-stat-val {
@@ -475,91 +445,86 @@ body.dashboard {
 }
 
 .batmobile-input-code {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1.5px solid #ff3333;
-  color: #ff3333;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  color: #333333;
   font-size: 2em;
   text-align: center;
   letter-spacing: 8px;
   padding: 10px;
-  border-radius: 6px;
+  border-radius: 4px;
   width: 100%;
   max-width: 260px;
   outline: none;
   font-weight: bold;
-  font-family: inherit;
 }
 
 .batmobile-input-code:focus {
-  box-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+  border-color: #00082f;
 }
 
 .batmobile-btn {
-  background-color: #ff3333;
+  background-color: #00082f;
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
+  padding: 10px 20px;
+  border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  font-family: inherit;
-  transition: all 0.2s ease;
 }
 
 .batmobile-btn:hover {
-  background-color: #cc0000;
-  box-shadow: 0 0 10px rgba(255, 51, 51, 0.4);
+  background-color: #000314;
 }
 
 .batmobile-btn.btn-request {
   background-color: transparent;
-  color: #ff3333;
-  border: 1.5px solid #ff3333;
+  color: #00082f;
+  border: 1px solid #00082f;
   margin-bottom: 10px;
 }
 
 .batmobile-btn.btn-request:hover {
-  background-color: rgba(255, 51, 51, 0.1);
+  background-color: rgba(0, 8, 47, 0.05);
 }
 
 .batmobile-btn.btn-verified {
-  background-color: #00ffcc;
-  color: #000411;
+  background-color: #640a00;
+  color: white;
   margin-top: 15px;
 }
 
 .batmobile-btn.btn-verified:hover {
-  background-color: #00cc99;
-  box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+  background-color: #3f0600;
 }
 
 .batmobile-alert {
-  padding: 12px 15px;
-  border-radius: 6px;
+  padding: 10px 15px;
+  border-radius: 4px;
   font-size: 0.9em;
   margin-top: 10px;
   text-align: center;
   width: 100%;
   box-sizing: border-box;
+  border: 1px solid transparent;
 }
 
 .batmobile-alert.info {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: #e6f0fa;
+  border-color: #1a5c96;
+  color: #1a5c96;
 }
 
 .batmobile-alert.success {
-  background: rgba(0, 255, 204, 0.1);
-  border: 1px solid #00ffcc;
-  color: #00ffcc;
+  background: #e6f4ee;
+  border-color: #0d5c3a;
+  color: #0d5c3a;
 }
 
 .batmobile-alert.error {
-  background: rgba(255, 51, 51, 0.1);
-  border: 1px solid #ff3333;
-  color: #ff3333;
+  background: #fde8e6;
+  border-color: #c0392b;
+  color: #c0392b;
 }
 

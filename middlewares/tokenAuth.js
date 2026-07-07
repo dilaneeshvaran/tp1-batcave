@@ -5,7 +5,14 @@ const verifyAndRefreshTokens = (req, res) => {
   const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
   
   //  checking access token
-  const accessToken = req.cookies.access_token || req.cookies.accessToken;
+  let accessToken = req.cookies.access_token || req.cookies.accessToken;
+  
+  // accept bearer token transmission from authorization header
+  const authHeader = req.headers.authorization;
+  if (!accessToken && authHeader && authHeader.startsWith("Bearer ")) {
+    accessToken = authHeader.split(" ")[1];
+  }
+
   if (accessToken) {
     try {
       const decoded = jwt.verify(accessToken, jwtSecret);
