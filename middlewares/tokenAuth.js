@@ -23,6 +23,16 @@ const verifyAndRefreshTokens = (req, res) => {
     try {
       const row = db.prepare("SELECT * FROM refresh_tokens WHERE token = ?").get(refreshToken);
       if (row) {
+        if (row.used === 1) {
+          console.warn(`[SECURITY WARNING] Reuse of refresh token detected in middleware for user ID: ${row.user_id}. Revoking all sessions.`);
+          db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(row.user_id);
+          res.clearCookie("access_token");
+          res.clearCookie("accessToken");
+          res.clearCookie("refresh_token");
+          res.clearCookie("refreshToken");
+          return false;
+        }
+
         const isExpired = new Date(row.expires_at) < new Date();
         if (isExpired) {
           // clean up expired refresh token

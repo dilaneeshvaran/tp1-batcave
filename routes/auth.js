@@ -277,6 +277,17 @@ router.post("/api/auth/refresh", (req, res) => {
       return res.status(401).json({ error: "Invalid refresh token" });
     }
 
+    // reuse detection
+    if (row.used === 1) {
+      console.warn(`[SECURITY WARNING] Reuse of refresh token detected for user ID: ${row.user_id}. Revoking all sessions.`);
+      db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(row.user_id);
+      res.clearCookie("access_token");
+      res.clearCookie("accessToken");
+      res.clearCookie("refresh_token");
+      res.clearCookie("refreshToken");
+      return res.status(401).json({ error: "Compromised session, all devices disconnected." });
+    }
+
     const isExpired = new Date(row.expires_at) < new Date();
     if (isExpired) {
       // clean up expired refresh token
@@ -292,6 +303,16 @@ router.post("/api/auth/refresh", (req, res) => {
     if (!user) {
       return res.status(401).json({ error: "User not found" });
     }
+
+    // rotate refresh token: mark current as used, generate new one
+    db.prepare("UPDATE refresh_tokens SET used = 1 WHERE token = ?").run(refreshToken);
+
+    const newRefreshToken = crypto.randomBytes(40).toString("hex");
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    
+    db.prepare(
+      "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+    ).run(newRefreshToken, user.id, expiresAt, new Date().toISOString());
 
     // generate jwt access token (15 sec expiry)
     const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
@@ -317,6 +338,20 @@ router.post("/api/auth/refresh", (req, res) => {
       secure: true,
       sameSite: "strict",
       maxAge: 15 * 1000,
+    });
+
+    res.cookie("refresh_token", newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+    });
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 
     return res.status(200).json({ message: "Token refreshed successfully" });

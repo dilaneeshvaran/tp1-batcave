@@ -40,6 +40,7 @@ db.exec(
     user_id INTEGER NOT NULL,
     expires_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 `,
@@ -47,6 +48,10 @@ db.exec(
 
 try {
   db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'USER'");
+} catch (_) {}
+
+try {
+  db.exec("ALTER TABLE refresh_tokens ADD COLUMN used INTEGER NOT NULL DEFAULT 0");
 } catch (_) {}
 
 module.exports = db;
