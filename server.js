@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const db = require("./config/db");
 const authRouter = require("./routes/auth");
@@ -8,6 +9,7 @@ const adminRouter = require("./routes/admin");
 const sessionSecurity = require("./middlewares/sessionSecurity");
 
 const app = express();
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
