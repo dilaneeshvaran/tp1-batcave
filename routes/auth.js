@@ -15,6 +15,10 @@ const cookieOptions = {
   sameSite: "strict",
 };
 
+const ACCESS_TOKEN_TTL = "15m";
+const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000;
+const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
 function clearAuthCookies(res) {
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
@@ -90,10 +94,10 @@ router.post("/auth/login", async (req, res, next) => {
       is2FAVerified: false,
     };
     
-    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
+    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: ACCESS_TOKEN_TTL });
 
     const refreshToken = crypto.randomBytes(40).toString("hex");
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE).toISOString();
 
     try {
       db.prepare(
@@ -106,12 +110,12 @@ router.post("/auth/login", async (req, res, next) => {
 
     res.cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 1000,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
     });
 
     res.cookie("refreshToken", refreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
     // audit log for successful login
@@ -288,7 +292,7 @@ router.post("/api/auth/refresh", (req, res) => {
     db.prepare("UPDATE refresh_tokens SET used = 1 WHERE token = ?").run(refreshToken);
 
     const newRefreshToken = crypto.randomBytes(40).toString("hex");
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE).toISOString();
 
     db.prepare(
       "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
@@ -318,16 +322,16 @@ router.post("/api/auth/refresh", (req, res) => {
       is2FAVerified,
     };
 
-    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
+    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: ACCESS_TOKEN_TTL });
 
     res.cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 1000,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
     });
 
     res.cookie("refreshToken", newRefreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
     return res.status(200).json({ message: "Token refreshed successfully" });
@@ -437,11 +441,11 @@ router.post("/api/auth/2fa/verify", checkAuth, (req, res) => {
       is2FAVerified: true,
     };
     
-    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
+    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: ACCESS_TOKEN_TTL });
 
     res.cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 1000,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
     });
 
     return res.status(200).json({
