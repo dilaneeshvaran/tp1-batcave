@@ -32,6 +32,26 @@
       </button>
       <div id="notes"></div>
 
+      <h2>authentification a 2 facteurs (totp)</h2>
+      <section class="card mb-4">
+        <div class="card-body">
+          <p style="margin-bottom: 15px; opacity: 0.9;">
+            activez la 2fa sur votre compte pour securiser vos connexions
+          </p>
+          <button type="button" id="btn-setup-2fa" class="btn-primary">Configurer la 2FA</button>
+          <div id="totp-setup-container" style="display: none; margin-top: 20px;">
+            <div id="totp-qr-wrapper"></div>
+            <p style="margin-top: 10px; font-size: 0.9em;">scannez le qr code ou entrez la clé dans votre app d'auth</p>
+            <div class="form-group" style="margin-top: 15px;">
+              <label for="totp-confirm-code">code 2fa a 6 chiffres</label>
+              <input type="text" id="totp-confirm-code" class="form-control" placeholder="000000" maxlength="6" style="max-width: 200px;" />
+            </div>
+            <button type="button" id="btn-confirm-2fa" class="btn-primary mt-2">activer la 2fa</button>
+          </div>
+          <div id="totp-setup-message" class="message-banner" style="display: none; margin-top: 15px;"></div>
+        </div>
+      </section>
+
       <h2>modifier le mot de passe</h2>
       <section class="change-password-section card">
         <div class="card-body">
@@ -57,9 +77,15 @@
     <script src="/logout.js"></script>
     <script src="/dashboard.js"></script>
     <script>
+      document.querySelector(".logout").addEventListener("click", logout);
+
       customFetch("/api/secrets")
         .then((response) => response.json())
         .then((data) => {
+          if (!Array.isArray(data)) {
+            document.getElementById("secrets").innerHTML = `<p style="padding: 10px; opacity: 0.8;">${data.error || "Accès restreint."}</p>`;
+            return;
+          }
           console.log("Secrets:", data);
           document.getElementById("secrets").innerHTML = `
             <div class="secrets-grid">
@@ -330,6 +356,69 @@
             console.error("Error changing password:", error);
             msgDiv.className = "message-banner error";
             msgDiv.textContent = "Erreur de connexion avec le serveur.";
+          });
+      });
+      document.getElementById("btn-setup-2fa").addEventListener("click", () => {
+        const msgDiv = document.getElementById("totp-setup-message");
+        msgDiv.style.display = "block";
+        msgDiv.className = "message-banner info";
+        msgDiv.textContent = "generation de la clé 2fa";
+
+        customFetch("/api/auth/2fa/setup", { method: "POST" })
+          .then(async (res) => {
+            const data = await res.json();
+            if (res.ok) {
+              msgDiv.style.display = "none";
+              document.getElementById("totp-setup-container").style.display = "block";
+              document.getElementById("totp-qr-wrapper").innerHTML = `
+                <img src="${data.qrCode}" alt="QR Code 2FA" style="border-radius: 8px; background: white; padding: 10px;" />
+                <p style="margin-top: 8px; font-family: monospace;">Clé secrète : <strong>${data.secret}</strong></p>
+              `;
+            } else {
+              msgDiv.className = "message-banner error";
+              msgDiv.textContent = data.error || "impossible d'initialiser la 2fa";
+            }
+          })
+          .catch(() => {
+            msgDiv.className = "message-banner error";
+            msgDiv.textContent = "erreur de connexion avec le serveur";
+          });
+      });
+
+      document.getElementById("btn-confirm-2fa").addEventListener("click", () => {
+        const code = document.getElementById("totp-confirm-code").value.trim();
+        const msgDiv = document.getElementById("totp-setup-message");
+
+        if (!code || code.length !== 6) {
+          msgDiv.style.display = "block";
+          msgDiv.className = "message-banner error";
+          msgDiv.textContent = "veuillez entrer un code a 6 chiffres";
+          return;
+        }
+
+        msgDiv.style.display = "block";
+        msgDiv.className = "message-banner info";
+        msgDiv.textContent = "activation en cours...";
+
+        customFetch("/api/auth/2fa/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code })
+        })
+          .then(async (res) => {
+            const data = await res.json();
+            if (res.ok) {
+              msgDiv.className = "message-banner success";
+              msgDiv.textContent = data.message || "2fa activer avec succes";
+              document.getElementById("totp-setup-container").style.display = "none";
+            } else {
+              msgDiv.className = "message-banner error";
+              msgDiv.textContent = data.error || "validation echouée";
+            }
+          })
+          .catch(() => {
+            msgDiv.className = "message-banner error";
+            msgDiv.textContent = "erreur de connexion avec le serveur";
           });
       });
     </script>
