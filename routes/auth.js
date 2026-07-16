@@ -109,6 +109,82 @@ router.post("/auth/login", async (req, res) => {
   });
 });
 
+router.post("/api/verify-2fa", async (req, res) => {
+  try {
+    const { username, code } = req.body;
+
+    if (!username || !code) {
+      return res.status(400).json({ error: "username et code requis." });
+    }
+
+    const user = db
+      .prepare("SELECT * FROM users WHERE username = ?")
+      .get(username.trim());
+
+    if (!user || user.two_factor_enabled !== 1 || !user.two_factor_secret) {
+      return res.status(401).json({ error: "2FA non disponible pour cet utilisateur." });
+    }
+
+    const isValid = authenticator.check(String(code).trim(), user.two_factor_secret);
+    if (!isValid) {
+      return res.status(401).json({ error: "code 2FA invalide ou expire." });
+    }
+
+    const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+    const tokenPayload = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      ip: req.ip,
+      userAgent: req.headers["user-agent"] || "",
+      is2FAVerified: true,
+    };
+
+    const accessToken = jwt.sign(tokenPayload, jwtSecret, {
+      expiresIn: ACCESS_TOKEN_TTL,
+    });
+
+    const refreshToken = crypto.randomBytes(40).toString("hex");
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE).toISOString();
+
+    db.prepare(
+      "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+    ).run(refreshToken, user.id, expiresAt, new Date().toISOString());
+
+    res.cookie("accessToken", accessToken, {
+      ...cookieOptions,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      ...cookieOptions,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    try {
+      db.prepare(
+        "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
+      ).run(
+        user.username,
+        "LOGIN",
+        req.ip,
+        req.headers["user-agent"] || "",
+        new Date().toISOString(),
+      );
+    } catch (auditErr) {
+      console.error("failed to log successful login", auditErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "connexion reussie.",
+    });
+  } catch (err) {
+    console.error("erreur verify-2fa", err);
+    return res.status(500).json({ error: "erreur interne." });
+  }
+});
+
 router.get(["/api/me", "/api/user/me"], checkAuth, (req, res) => {
   res.json({
     username: req.user.username,

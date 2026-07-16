@@ -7,27 +7,47 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <form id="login-form" method="POST" action="/auth/login">
+    <form id="login-form">
       <h2>Connexion</h2>
-      <label for="username">Nom d'utilisateur</label>
-      <input
-        type="text"
-        id="username"
-        name="username"
-        placeholder="Nom d'utilisateur"
-        required
-      />
-      <label for="password">Mot de passe</label>
-      <input
-        type="password"
-        id="password"
-        name="password"
-        placeholder="Mot de passe"
-        required
-      />
-      <button type="submit" class="btn-primary mt-2">Se connecter</button>
+      <div id="credentials-step">
+        <label for="username">Nom d'utilisateur</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Nom d'utilisateur"
+          required
+        />
+        <label for="password">Mot de passe</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Mot de passe"
+          required
+        />
+        <button type="submit" class="btn-primary mt-2" id="login-btn">
+          Se connecter
+        </button>
+      </div>
+      <div id="totp-step" style="display: none">
+        <label for="totp-code">Code 2FA (6 chiffres)</label>
+        <input
+          type="text"
+          id="totp-code"
+          name="totp-code"
+          placeholder="000000"
+          maxlength="6"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+        />
+        <button type="button" class="btn-primary mt-2" id="verify-2fa-btn">
+          Valider le code
+        </button>
+      </div>
       <p id="message"></p>
       <a href="/register">Pas encore de compte ? S'inscrire</a>
     </form>
+    <script src="/login.js"></script>
   </body>
 </html>
