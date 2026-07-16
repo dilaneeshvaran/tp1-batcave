@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const path = require("path");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const QRCode = require("qrcode");
+const { authenticator } = require("@otplib/preset-v11");
 const db = require("../config/db");
 const checkAuth = require("../middlewares/checkAuth");
 const { isBlocked, recordFailure, recordSuccess } = require("../middlewares/loginLimiter");
@@ -378,7 +380,40 @@ router.post("/api/auth/change-password", checkAuth, async (req, res) => {
   }
 });
 
-// route to ask alfred for a 2fa validation code
+router.post("/api/auth/2fa/setup", checkAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+    if (!user) {
+      return res.status(404).json({ error: "utilisateur non trouve." });
+    }
+
+    if (user.two_factor_enabled === 1) {
+      return res.status(400).json({ error: "la 2FA est deja activee sur ce compte." });
+    }
+
+    const secret = authenticator.generateSecret();
+    const otpauthUrl = authenticator.keyuri(username, "Batcave", secret);
+
+    db.prepare(
+      "UPDATE users SET two_factor_secret = ?, two_factor_enabled = 0 WHERE id = ?"
+    ).run(secret, userId);
+
+    const qrCode = await QRCode.toDataURL(otpauthUrl);
+
+    return res.status(200).json({
+      qrCode,
+      secret,
+      message: "scannez le qr code avec votre application d'authentification.",
+    });
+  } catch (err) {
+    console.error("erreur lors de l'initialisation 2fa", err);
+    return res.status(500).json({ error: "impossible d'initialiser la 2FA." });
+  }
+});
+
 router.post("/api/auth/2fa/request", checkAuth, (req, res) => {
   try {
     const userId = req.user.id;
