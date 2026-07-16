@@ -139,7 +139,7 @@ router.post("/api/verify-2fa", async (req, res) => {
       role: user.role,
       ip: req.ip,
       userAgent: req.headers["user-agent"] || "",
-      is2FAVerified: true,
+      is2FAVerified: false,
       scopes: getScopesForRole(user.role),
     };
 

@@ -1,5 +1,7 @@
 const { verifyAndRefreshTokens } = require("./tokenAuth");
 const { isBlocked, recordFailure, recordSuccess } = require("./loginLimiter");
+const bcrypt = require("bcrypt");
+const db = require("../config/db");
 
 const checkAuth = async (req, res, next) => {
   if (verifyAndRefreshTokens(req, res)) {
