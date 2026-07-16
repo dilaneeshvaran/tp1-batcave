@@ -8,7 +8,9 @@ db.exec(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password_hash TEXT,
-    role TEXT NOT NULL DEFAULT 'USER'
+    role TEXT NOT NULL DEFAULT 'USER',
+    two_factor_secret TEXT,
+    two_factor_enabled INTEGER NOT NULL DEFAULT 0
   );
   
   CREATE TABLE IF NOT EXISTS reports (
@@ -48,6 +50,14 @@ db.exec(
 
 try {
   db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'USER'");
+} catch (_) {}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN two_factor_secret TEXT");
+} catch (_) {}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN two_factor_enabled INTEGER NOT NULL DEFAULT 0");
 } catch (_) {}
 
 try {
