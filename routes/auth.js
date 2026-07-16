@@ -294,8 +294,7 @@ router.post("/logout", (req, res) => {
   }
 
   clearAuthCookies(res);
-  res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
-  return res.status(401).json({ message: "logged out" });
+  return res.status(200).json({ success: true, message: "logged out" });
 });
 
 router.get("/auth/logout", (req, res) => {
