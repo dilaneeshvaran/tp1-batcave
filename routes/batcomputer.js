@@ -5,6 +5,7 @@ const db = require("../config/db");
 const checkAuth = require("../middlewares/checkAuth");
 const isAuthenticated = require("../middlewares/authCheck");
 const check2FA = require("../middlewares/check2FA");
+const checkScope = require("../middlewares/checkScope");
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.get("/bat-computer", isAuthenticated, (req, res) => {
   });
 });
 
-router.get("/api/secrets", checkAuth, (req, res) => {
+router.get("/api/secrets", checkAuth, checkScope("armory:weapons"), (req, res) => {
   insertLog(req.user);
   res.json([
     { name: "Batarang", desc: "Arme de jet", icon: "fa-shuriken" },
@@ -45,7 +46,7 @@ router.get("/api/secrets", checkAuth, (req, res) => {
   ]);
 });
 
-router.post("/api/reports", checkAuth, (req, res) => {
+router.post("/api/reports", checkAuth, checkScope("computers:read"), (req, res) => {
   const { message } = req.body;
   const user_id = req.user.id;
   try {
@@ -59,7 +60,7 @@ router.post("/api/reports", checkAuth, (req, res) => {
   }
 });
 
-router.get("/api/reports", checkAuth, (req, res) => {
+router.get("/api/reports", checkAuth, checkScope("computers:read"), (req, res) => {
   try {
     const reports = db
       .prepare(
@@ -76,8 +77,12 @@ router.get("/api/reports", checkAuth, (req, res) => {
   }
 });
 
-// protected command center endpoint
-router.get("/api/user/secret-batmobile", checkAuth, check2FA, (req, res) => {
+router.get(
+  "/api/user/secret-batmobile",
+  checkAuth,
+  check2FA,
+  checkScope("batmobile:control"),
+  (req, res) => {
   insertLog(req.user);
   res.json({
     message: "Système de contrôle de la Batmobile déverrouillé.",
@@ -95,6 +100,7 @@ router.get("/api/user/secret-batmobile", checkAuth, check2FA, (req, res) => {
     },
     criticalCommandToken: "BAT-SECRET-COMMAND-EXECUTE-9912"
   });
-});
+  },
+);
 
 module.exports = router;

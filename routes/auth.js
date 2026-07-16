@@ -7,6 +7,8 @@ const QRCode = require("qrcode");
 const { authenticator } = require("@otplib/preset-v11");
 const db = require("../config/db");
 const checkAuth = require("../middlewares/checkAuth");
+const checkScope = require("../middlewares/checkScope");
+const { getScopesForRole } = require("../middlewares/scopes");
 const { isBlocked, recordFailure, recordSuccess } = require("../middlewares/loginLimiter");
 
 const router = express.Router();
@@ -138,6 +140,7 @@ router.post("/api/verify-2fa", async (req, res) => {
       ip: req.ip,
       userAgent: req.headers["user-agent"] || "",
       is2FAVerified: true,
+      scopes: getScopesForRole(user.role),
     };
 
     const accessToken = jwt.sign(tokenPayload, jwtSecret, {
@@ -185,13 +188,19 @@ router.post("/api/verify-2fa", async (req, res) => {
   }
 });
 
-router.get(["/api/me", "/api/user/me"], checkAuth, (req, res) => {
-  res.json({
-    username: req.user.username,
-    id: req.user.id,
-    role: req.user.role,
-  });
-});
+router.get(
+  ["/api/me", "/api/user/me"],
+  checkAuth,
+  checkScope("computers:read"),
+  (req, res) => {
+    res.json({
+      username: req.user.username,
+      id: req.user.id,
+      role: req.user.role,
+      scopes: req.user.scopes || [],
+    });
+  },
+);
 
 router.post("/logout", (req, res) => {
   const refreshToken = req.cookies.refreshToken;
@@ -375,6 +384,7 @@ router.post("/api/auth/refresh", (req, res) => {
       ip: req.ip,
       userAgent: req.headers["user-agent"] || "",
       is2FAVerified,
+      scopes: getScopesForRole(user.role),
     };
 
     const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: ACCESS_TOKEN_TTL });
@@ -575,8 +585,9 @@ router.post("/api/auth/2fa/verify", checkAuth, (req, res) => {
       ip: req.ip,
       userAgent: req.headers["user-agent"] || "",
       is2FAVerified: true,
+      scopes: getScopesForRole(req.user.role),
     };
-    
+
     const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: ACCESS_TOKEN_TTL });
 
     res.cookie("accessToken", accessToken, {
