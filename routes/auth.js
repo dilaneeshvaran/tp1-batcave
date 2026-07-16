@@ -97,17 +97,63 @@ router.post("/auth/login", async (req, res) => {
 
   recordSuccess(username);
 
-  if (user.two_factor_enabled !== 1) {
-    return res.status(403).json({
-      error: "activation de la 2FA obligatoire avant toute connexion.",
-      twoFactorRequired: true,
+  if (user.two_factor_enabled === 1) {
+    return res.status(200).json({
+      requires2FA: true,
+      username: user.username,
+      message: "identifiants valide! saisissez votre code 2fa",
     });
   }
 
-  return res.status(200).json({
-    requires2FA: true,
+  const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+  const tokenPayload = {
+    id: user.id,
     username: user.username,
-    message: "identifiants valides, saisissez votre code 2FA.",
+    role: user.role,
+    ip: req.ip,
+    userAgent: req.headers["user-agent"] || "",
+    is2FAVerified: false,
+    scopes: getScopesForRole(user.role),
+  };
+
+  const accessToken = jwt.sign(tokenPayload, jwtSecret, {
+    expiresIn: ACCESS_TOKEN_TTL,
+  });
+
+  const refreshToken = crypto.randomBytes(40).toString("hex");
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE).toISOString();
+
+  db.prepare(
+    "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at, is_used) VALUES (?, ?, ?, ?, 0)"
+  ).run(refreshToken, user.id, expiresAt, new Date().toISOString());
+
+  res.cookie("accessToken", accessToken, {
+    ...cookieOptions,
+    maxAge: ACCESS_TOKEN_MAX_AGE,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOptions,
+    maxAge: REFRESH_TOKEN_MAX_AGE,
+  });
+
+  try {
+    db.prepare(
+      "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
+    ).run(
+      user.username,
+      "LOGIN",
+      req.ip,
+      req.headers["user-agent"] || "",
+      new Date().toISOString(),
+    );
+  } catch (auditErr) {
+    console.error("failed to log successful login", auditErr);
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "conextion reussie",
   });
 });
 
