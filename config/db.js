@@ -42,7 +42,7 @@ db.exec(
     user_id INTEGER NOT NULL,
     expires_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    used INTEGER NOT NULL DEFAULT 0,
+    is_used INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 `,
@@ -61,7 +61,11 @@ try {
 } catch (_) {}
 
 try {
-  db.exec("ALTER TABLE refresh_tokens ADD COLUMN used INTEGER NOT NULL DEFAULT 0");
+  db.exec("ALTER TABLE refresh_tokens RENAME COLUMN used TO is_used");
+} catch (_) {}
+
+try {
+  db.exec("ALTER TABLE refresh_tokens ADD COLUMN is_used INTEGER NOT NULL DEFAULT 0");
 } catch (_) {}
 
 module.exports = db;

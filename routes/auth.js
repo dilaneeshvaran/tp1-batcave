@@ -148,7 +148,7 @@ router.post("/api/verify-2fa", async (req, res) => {
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE).toISOString();
 
     db.prepare(
-      "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+      "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at, is_used) VALUES (?, ?, ?, ?, 0)"
     ).run(refreshToken, user.id, expiresAt, new Date().toISOString());
 
     res.cookie("accessToken", accessToken, {
@@ -305,12 +305,31 @@ router.post("/api/auth/refresh", (req, res) => {
       return res.status(401).json({ error: "Invalid refresh token" });
     }
 
-    // reuse detection
-    if (row.used === 1) {
-      console.warn(`[SECURITY WARNING] Reuse of refresh token detected for user ID: ${row.user_id}. Revoking all sessions.`);
+    if (row.is_used === 1) {
+      const user = db.prepare("SELECT username FROM users WHERE id = ?").get(row.user_id);
+      console.warn(
+        `[SECURITY] rejeu refresh token detecte pour user_id=${row.user_id}. revocation de toutes les sessions.`
+      );
       db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(row.user_id);
+      if (user) {
+        try {
+          db.prepare(
+            "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
+          ).run(
+            user.username,
+            "TOKEN_REUSE",
+            req.ip,
+            req.headers["user-agent"] || "",
+            new Date().toISOString(),
+          );
+        } catch (auditErr) {
+          console.error("failed to log TOKEN_REUSE", auditErr);
+        }
+      }
       clearAuthCookies(res);
-      return res.status(401).json({ error: "Compromised session, all devices disconnected." });
+      return res.status(401).json({
+        error: "session compromise, tous les appareils ont ete deconnectes. reconnexion MFA requise.",
+      });
     }
 
     const isExpired = new Date(row.expires_at) < new Date();
@@ -325,14 +344,13 @@ router.post("/api/auth/refresh", (req, res) => {
       return res.status(401).json({ error: "User not found" });
     }
 
-    // rotate refresh token: mark current as used, generate new one
-    db.prepare("UPDATE refresh_tokens SET used = 1 WHERE token = ?").run(refreshToken);
+    db.prepare("UPDATE refresh_tokens SET is_used = 1 WHERE token = ?").run(refreshToken);
 
     const newRefreshToken = crypto.randomBytes(40).toString("hex");
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE).toISOString();
 
     db.prepare(
-      "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+      "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at, is_used) VALUES (?, ?, ?, ?, 0)"
     ).run(newRefreshToken, user.id, expiresAt, new Date().toISOString());
 
     const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
