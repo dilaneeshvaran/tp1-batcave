@@ -1,3 +1,6 @@
-function logout() {
-  window.location.href = "/auth/logout";
+async function logout() {
+  try {
+    await fetch("/logout", { method: "POST" });
+  } catch (e) {}
+  window.location.href = "/auth/login";
 }
