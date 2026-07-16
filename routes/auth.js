@@ -61,93 +61,52 @@ router.get("/auth/login", (req, res) => {
   res.sendFile(path.join(__dirname, "../views/login.html"));
 });
 
-router.post("/auth/login", async (req, res, next) => {
+router.post("/auth/login", async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).send("champs requis manquants");
+    return res.status(400).json({ error: "champs requis manquants" });
   }
 
   const { blocked, remainingMs } = isBlocked(username);
   if (blocked) {
     const remainingSec = Math.ceil(remainingMs / 1000);
-    return res
-      .status(429)
-      .send(
-        `<script>alert('trop de tentatives... réessayez dans ${remainingSec} secondes'); window.location.href = '/auth/login';</script>`,
-      );
+    return res.status(429).json({
+      error: `trop de tentatives, reessayez dans ${remainingSec} secondes`,
+    });
   }
 
   const user = db
     .prepare("SELECT * FROM users WHERE username = ?")
     .get(username);
 
-  if (user && (await bcrypt.compare(password, user.password_hash))) {
-    recordSuccess(username);
-
-    // generate jwt access token (15 sec expiry)
-    const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
-    const tokenPayload = {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      ip: req.ip,
-      userAgent: req.headers["user-agent"] || "",
-      is2FAVerified: false,
-    };
-    
-    const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: ACCESS_TOKEN_TTL });
-
-    const refreshToken = crypto.randomBytes(40).toString("hex");
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE).toISOString();
-
-    try {
-      db.prepare(
-        "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
-      ).run(refreshToken, user.id, expiresAt, new Date().toISOString());
-    } catch (dbErr) {
-      console.error("failed to save refresh token", dbErr);
-      return next(dbErr);
-    }
-
-    res.cookie("accessToken", accessToken, {
-      ...cookieOptions,
-      maxAge: ACCESS_TOKEN_MAX_AGE,
-    });
-
-    res.cookie("refreshToken", refreshToken, {
-      ...cookieOptions,
-      maxAge: REFRESH_TOKEN_MAX_AGE,
-    });
-
-    // audit log for successful login
-    try {
-      db.prepare(
-        "INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)"
-      ).run(user.username, "LOGIN", req.ip, req.headers["user-agent"] || "", new Date().toISOString());
-    } catch (auditErr) {
-      console.error("failed to log successful login", auditErr);
-    }
-
-    res.redirect("/bat-computer");
-  } else {
+  if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     recordFailure(username);
     const { blocked: nowBlocked, remainingMs: newRemainingMs } =
       isBlocked(username);
     if (nowBlocked) {
       const remainingSec = Math.ceil(newRemainingMs / 1000);
-      return res
-        .status(429)
-        .send(
-          `<script>alert('trop de tentative detectée, compte bloqué pendant ${remainingSec} seconde'); window.location.href = '/auth/login';</script>`,
-        );
+      return res.status(429).json({
+        error: `trop de tentatives, compte bloque pendant ${remainingSec} secondes`,
+      });
     }
-    return res
-      .status(401)
-      .send(
-        "<script>alert('identifiants invalides'); window.location.href = '/auth/login';</script>",
-      );
+    return res.status(401).json({ error: "identifiants invalides" });
   }
+
+  recordSuccess(username);
+
+  if (user.two_factor_enabled !== 1) {
+    return res.status(403).json({
+      error: "activation de la 2FA obligatoire avant toute connexion.",
+      twoFactorRequired: true,
+    });
+  }
+
+  return res.status(200).json({
+    requires2FA: true,
+    username: user.username,
+    message: "identifiants valides, saisissez votre code 2FA.",
+  });
 });
 
 router.get(["/api/me", "/api/user/me"], checkAuth, (req, res) => {
