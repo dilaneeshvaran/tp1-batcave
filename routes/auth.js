@@ -414,6 +414,54 @@ router.post("/api/auth/2fa/setup", checkAuth, async (req, res) => {
   }
 });
 
+router.post("/api/auth/2fa/confirm", checkAuth, (req, res) => {
+  try {
+    const { code, username } = req.body;
+
+    if (!code || String(code).trim().length !== 6) {
+      return res.status(400).json({ error: "code a 6 chiffres requis." });
+    }
+
+    let user;
+    if (username) {
+      user = db.prepare("SELECT * FROM users WHERE username = ?").get(username.trim());
+    } else {
+      user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id);
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: "utilisateur non trouve." });
+    }
+
+    if (user.id !== req.user.id) {
+      return res.status(403).json({ error: "action non autorisee." });
+    }
+
+    if (user.two_factor_enabled === 1) {
+      return res.status(400).json({ error: "la 2FA est deja activee." });
+    }
+
+    if (!user.two_factor_secret) {
+      return res.status(400).json({ error: "aucune initialisation 2FA en cours. appelez d'abord /api/auth/2fa/setup." });
+    }
+
+    const isValid = authenticator.check(String(code).trim(), user.two_factor_secret);
+    if (!isValid) {
+      return res.status(401).json({ error: "code 2FA invalide ou expire." });
+    }
+
+    db.prepare("UPDATE users SET two_factor_enabled = 1 WHERE id = ?").run(user.id);
+
+    return res.status(200).json({
+      success: true,
+      message: "2FA activee avec succes.",
+    });
+  } catch (err) {
+    console.error("erreur lors de la confirmation 2fa", err);
+    return res.status(500).json({ error: "impossible de confirmer la 2FA." });
+  }
+});
+
 router.post("/api/auth/2fa/request", checkAuth, (req, res) => {
   try {
     const userId = req.user.id;
