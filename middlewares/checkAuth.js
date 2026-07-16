@@ -10,12 +10,7 @@ const checkAuth = async (req, res, next) => {
 
   if (!authHeader || !authHeader.startsWith("Basic ")) {
     if (req.path.startsWith("/api/")) {
-      res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
-      return res
-        .status(401)
-        .send(
-          "<script>alert('authentification requise'); window.location.href = '/auth/login';</script>",
-        );
+      return res.status(401).json({ error: "Unauthorized" });
     }
     return res.redirect("/auth/login");
   }
