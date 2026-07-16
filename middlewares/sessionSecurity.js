@@ -1,6 +1,17 @@
 const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "strict",
+};
+
+function clearAuthCookies(res) {
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("refreshToken", cookieOptions);
+}
+
 const sessionSecurity = (req, res, next) => {
   const token = req.cookies.accessToken;
   if (token) {
@@ -41,8 +52,7 @@ const sessionSecurity = (req, res, next) => {
             }
           }
 
-          res.clearCookie("accessToken");
-          res.clearCookie("refreshToken");
+          clearAuthCookies(res);
 
           return res
             .status(403)
@@ -53,8 +63,7 @@ const sessionSecurity = (req, res, next) => {
       }
     } catch (err) {
       console.warn("Invalid access token in sessionSecurity check", err.message);
-      res.clearCookie("accessToken");
-      res.clearCookie("refreshToken");
+      clearAuthCookies(res);
     }
   }
   next();

@@ -9,6 +9,17 @@ const { isBlocked, recordFailure, recordSuccess } = require("../middlewares/logi
 
 const router = express.Router();
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "strict",
+};
+
+function clearAuthCookies(res) {
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("refreshToken", cookieOptions);
+}
+
 // temporary inmemory store for 2fa validation code
 const twoFactorCodes = new Map();
 
@@ -94,16 +105,12 @@ router.post("/auth/login", async (req, res, next) => {
     }
 
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 15 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -190,8 +197,7 @@ router.post("/logout", (req, res) => {
     }
   }
 
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
+  clearAuthCookies(res);
   res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
   return res.status(401).json({ message: "logged out" });
 });
@@ -241,8 +247,7 @@ router.get("/auth/logout", (req, res) => {
     }
   }
 
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
+  clearAuthCookies(res);
   res.redirect("/auth/login");
 });
 
@@ -263,16 +268,14 @@ router.post("/api/auth/refresh", (req, res) => {
     if (row.used === 1) {
       console.warn(`[SECURITY WARNING] Reuse of refresh token detected for user ID: ${row.user_id}. Revoking all sessions.`);
       db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(row.user_id);
-      res.clearCookie("accessToken");
-      res.clearCookie("refreshToken");
+      clearAuthCookies(res);
       return res.status(401).json({ error: "Compromised session, all devices disconnected." });
     }
 
     const isExpired = new Date(row.expires_at) < new Date();
     if (isExpired) {
       db.prepare("DELETE FROM refresh_tokens WHERE token = ?").run(refreshToken);
-      res.clearCookie("accessToken");
-      res.clearCookie("refreshToken");
+      clearAuthCookies(res);
       return res.status(401).json({ error: "Refresh token expired" });
     }
 
@@ -318,16 +321,12 @@ router.post("/api/auth/refresh", (req, res) => {
     const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
 
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 15 * 1000,
     });
 
     res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -441,9 +440,7 @@ router.post("/api/auth/2fa/verify", checkAuth, (req, res) => {
     const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
 
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: 15 * 1000,
     });
 
