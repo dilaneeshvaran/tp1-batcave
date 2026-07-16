@@ -93,13 +93,6 @@ router.post("/auth/login", async (req, res, next) => {
       return next(dbErr);
     }
 
-    res.cookie("access_token", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 15 * 1000,
-    });
-
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: true,
@@ -107,18 +100,11 @@ router.post("/auth/login", async (req, res, next) => {
       maxAge: 15 * 1000,
     });
 
-    res.cookie("refresh_token", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
-    });
-
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     // audit log for successful login
@@ -160,11 +146,10 @@ router.get(["/api/me", "/api/user/me"], checkAuth, (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-  const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
+  const refreshToken = req.cookies.refreshToken;
   let username = null;
 
-  //  get username from access token
-  const token = req.cookies.access_token || req.cookies.accessToken;
+  const token = req.cookies.accessToken;
   if (token) {
     try {
       const decoded = jwt.decode(token);
@@ -174,7 +159,6 @@ router.post("/logout", (req, res) => {
     } catch (e) {}
   }
 
-  // fallback username via refresh token before deleting it
   if (!username && refreshToken) {
     try {
       const row = db.prepare(
@@ -206,20 +190,17 @@ router.post("/logout", (req, res) => {
     }
   }
 
-  res.clearCookie("access_token");
   res.clearCookie("accessToken");
-  res.clearCookie("refresh_token");
   res.clearCookie("refreshToken");
   res.setHeader("WWW-Authenticate", 'Basic realm="Administration"');
   return res.status(401).json({ message: "logged out" });
 });
 
 router.get("/auth/logout", (req, res) => {
-  const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
+  const refreshToken = req.cookies.refreshToken;
   let username = null;
 
-  // get username from access token
-  const token = req.cookies.access_token || req.cookies.accessToken;
+  const token = req.cookies.accessToken;
   if (token) {
     try {
       const decoded = jwt.decode(token);
@@ -229,7 +210,6 @@ router.get("/auth/logout", (req, res) => {
     } catch (e) {}
   }
 
-  // fallback username via refresh token before deleting it
   if (!username && refreshToken) {
     try {
       const row = db.prepare(
@@ -261,15 +241,13 @@ router.get("/auth/logout", (req, res) => {
     }
   }
 
-  res.clearCookie("access_token");
   res.clearCookie("accessToken");
-  res.clearCookie("refresh_token");
   res.clearCookie("refreshToken");
   res.redirect("/auth/login");
 });
 
 router.post("/api/auth/refresh", (req, res) => {
-  const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
+  const refreshToken = req.cookies.refreshToken;
 
   if (!refreshToken) {
     return res.status(401).json({ error: "Refresh token missing" });
@@ -285,20 +263,15 @@ router.post("/api/auth/refresh", (req, res) => {
     if (row.used === 1) {
       console.warn(`[SECURITY WARNING] Reuse of refresh token detected for user ID: ${row.user_id}. Revoking all sessions.`);
       db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(row.user_id);
-      res.clearCookie("access_token");
       res.clearCookie("accessToken");
-      res.clearCookie("refresh_token");
       res.clearCookie("refreshToken");
       return res.status(401).json({ error: "Compromised session, all devices disconnected." });
     }
 
     const isExpired = new Date(row.expires_at) < new Date();
     if (isExpired) {
-      // clean up expired refresh token
       db.prepare("DELETE FROM refresh_tokens WHERE token = ?").run(refreshToken);
-      res.clearCookie("access_token");
       res.clearCookie("accessToken");
-      res.clearCookie("refresh_token");
       res.clearCookie("refreshToken");
       return res.status(401).json({ error: "Refresh token expired" });
     }
@@ -313,16 +286,15 @@ router.post("/api/auth/refresh", (req, res) => {
 
     const newRefreshToken = crypto.randomBytes(40).toString("hex");
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    
+
     db.prepare(
       "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
     ).run(newRefreshToken, user.id, expiresAt, new Date().toISOString());
 
-    // generate jwt access token (15 sec expiry)
     const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
-    
+
     let is2FAVerified = false;
-    const oldAccessToken = req.cookies.access_token || req.cookies.accessToken;
+    const oldAccessToken = req.cookies.accessToken;
     if (oldAccessToken) {
       try {
         const decoded = jwt.verify(oldAccessToken, jwtSecret, { ignoreExpiration: true });
@@ -345,13 +317,6 @@ router.post("/api/auth/refresh", (req, res) => {
 
     const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
 
-    res.cookie("access_token", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 15 * 1000,
-    });
-
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: true,
@@ -359,18 +324,11 @@ router.post("/api/auth/refresh", (req, res) => {
       maxAge: 15 * 1000,
     });
 
-    res.cookie("refresh_token", newRefreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
-    });
-
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({ message: "Token refreshed successfully" });
@@ -481,21 +439,14 @@ router.post("/api/auth/2fa/verify", checkAuth, (req, res) => {
     };
     
     const accessToken = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "15s" });
-    
-    res.cookie("access_token", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 15 * 1000,
-    });
-    
+
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
       maxAge: 15 * 1000,
     });
-    
+
     return res.status(200).json({
       success: true,
       message: "double validation reussie ! acces accorde aux commandes critiques."

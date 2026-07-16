@@ -2,13 +2,13 @@ const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 
 const sessionSecurity = (req, res, next) => {
-  const token = req.cookies.access_token || req.cookies.accessToken;
+  const token = req.cookies.accessToken;
   if (token) {
     try {
       const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
       // verify the signature but not expire date bcoz of refresh token
       const payload = jwt.verify(token, jwtSecret, { ignoreExpiration: true });
-      
+
       const sessionIp = payload.ip;
       const sessionUserAgent = payload.userAgent;
 
@@ -32,7 +32,7 @@ const sessionSecurity = (req, res, next) => {
           }
 
           // delete refresh token to block hijacked session
-          const refreshToken = req.cookies.refresh_token || req.cookies.refreshToken;
+          const refreshToken = req.cookies.refreshToken;
           if (refreshToken) {
             try {
               db.prepare("DELETE FROM refresh_tokens WHERE token = ?").run(refreshToken);
@@ -41,11 +41,9 @@ const sessionSecurity = (req, res, next) => {
             }
           }
 
-          res.clearCookie("access_token");
           res.clearCookie("accessToken");
-          res.clearCookie("refresh_token");
           res.clearCookie("refreshToken");
-          
+
           return res
             .status(403)
             .send(
@@ -55,9 +53,7 @@ const sessionSecurity = (req, res, next) => {
       }
     } catch (err) {
       console.warn("Invalid access token in sessionSecurity check", err.message);
-      res.clearCookie("access_token");
       res.clearCookie("accessToken");
-      res.clearCookie("refresh_token");
       res.clearCookie("refreshToken");
     }
   }

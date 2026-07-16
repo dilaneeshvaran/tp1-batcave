@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const verifyAndRefreshTokens = (req, res) => {
   const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
 
-  let accessToken = req.cookies.access_token || req.cookies.accessToken;
+  let accessToken = req.cookies.accessToken;
 
   const authHeader = req.headers.authorization;
   if (!accessToken && authHeader && authHeader.startsWith("Bearer ")) {
