@@ -26,6 +26,7 @@ const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 function clearAuthCookies(res) {
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
+  res.clearCookie("batauth_token", cookieOptions);
 }
 
 // temporary inmemory store for 2fa validation code
@@ -136,6 +137,8 @@ router.post("/auth/login", async (req, res) => {
     ...cookieOptions,
     maxAge: REFRESH_TOKEN_MAX_AGE,
   });
+
+  res.clearCookie("batauth_token", cookieOptions);
 
   try {
     db.prepare(
