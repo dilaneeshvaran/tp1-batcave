@@ -10,9 +10,12 @@ db.exec(
     password_hash TEXT,
     role TEXT NOT NULL DEFAULT 'USER',
     two_factor_secret TEXT,
-    two_factor_enabled INTEGER NOT NULL DEFAULT 0
+    two_factor_enabled INTEGER NOT NULL DEFAULT 0,
+    provider TEXT NOT NULL DEFAULT 'local',
+    provider_user_id TEXT,
+    email TEXT
   );
-  
+
   CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     message TEXT,
@@ -58,6 +61,22 @@ try {
 
 try {
   db.exec("ALTER TABLE users ADD COLUMN two_factor_enabled INTEGER NOT NULL DEFAULT 0");
+} catch (_) {}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN provider TEXT NOT NULL DEFAULT 'local'");
+} catch (_) {}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN provider_user_id TEXT");
+} catch (_) {}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN email TEXT");
+} catch (_) {}
+
+try {
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_provider_id ON users(provider, provider_user_id)");
 } catch (_) {}
 
 try {
