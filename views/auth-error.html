@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>erreur d'authentification - batcave</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="home-card" style="text-align: center; max-width: 500px;">
+      <h1 class="home-title" style="color: #e74c3c;">Authentification Interrompue</h1>
+      <p id="error-description" style="margin: 1.5rem 0; font-size: 1.1rem; color: #ecf0f1;">
+        la connexion avec le fournisseur d'identite a été annulée ou a ecoue
+      </p>
+      <div id="error-detail" style="font-family: monospace; background: rgba(0,0,0,0.4); padding: 0.8rem; border-radius: 6px; color: #e67e22; margin-bottom: 1.5rem;">
+        erreur : <span id="error-code">access_denied</span>
+      </div>
+      <a href="/auth/login" class="btn-primary home-btn">retour a la connexion</a>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const err = params.get('error') || 'inconnue';
+      const provider = params.get('provider') || '';
+      
+      const errorCodeEl = document.getElementById('error-code');
+      const errorDescEl = document.getElementById('error-description');
+
+      if (errorCodeEl) errorCodeEl.textContent = err;
+
+      if (err === 'access_denied' || err === 'user_denied' || err === 'cancel') {
+        errorDescEl.textContent = `vous avez annulé la demande d'autorisation auprès de ${provider || 'votre fournisseur d\'identité'}.`;
+      } else if (err === 'invalid_state') {
+        errorDescEl.textContent = "erreur csrf (invalide ou expiré), veuillez réessayer";
+      } else if (err === 'missing_code') {
+        errorDescEl.textContent = "aucun code d'autorisation a ete fourni par le serveur distant";
+      }
+    </script>
+  </body>
+</html>
