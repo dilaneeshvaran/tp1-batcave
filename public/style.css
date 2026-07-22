@@ -649,10 +649,10 @@ body.dashboard {
 }
 
 .btn-batauth:hover {
-  background-color: #000314;
-  color: #ffd700;
-  border-color: #ffd700;
-  box-shadow: 0 3px 6px rgba(241, 196, 15, 0.3);
+  background-color: #00082f;
+  color: #f1c40f;
+  border-color: #f1c40f;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 
