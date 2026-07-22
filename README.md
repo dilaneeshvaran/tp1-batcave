@@ -1,7 +1,10 @@
 # TP1 et TP2
 
-TP1 est sur la branche main
+TP1 est sur la branche tp1
 TP2 est sur la branche tp2
+TP3 est sur la branche tp3
+TP4 est sur la branche tp4
+TP5 est sur la branche tp5
 
 ## How to start
 
