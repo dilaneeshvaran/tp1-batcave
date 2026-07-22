@@ -16,6 +16,9 @@ function insertLog(user) {
 }
 
 router.get("/bat-computer", isAuthenticated, (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   insertLog(req.user);
   const filePath = path.join(__dirname, "../views/bat-computer.html");
   fs.readFile(filePath, "utf8", (err, html) => {

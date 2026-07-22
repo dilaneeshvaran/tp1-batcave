@@ -1,6 +1,10 @@
 const { verifyAndRefreshTokens } = require("./tokenAuth");
 
 const isAuthenticated = (req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+
   if (verifyAndRefreshTokens(req, res)) {
     return next();
   }

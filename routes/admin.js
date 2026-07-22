@@ -14,6 +14,9 @@ function insertLog(user) {
 }
 
 router.get("/admin", checkAuth, checkAdmin, checkScope("computers:admin"), (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   insertLog(req.user);
   res.sendFile(path.join(__dirname, "../views/admin.html"));
 });
