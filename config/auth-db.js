@@ -1,6 +1,7 @@
 const Database = require("better-sqlite3");
 const path = require("path");
 const bcrypt = require("bcrypt");
+require("dotenv").config();
 
 const db = new Database(path.join(__dirname, "../auth_server.db"));
 
@@ -28,16 +29,23 @@ db.exec(`
 `);
 
 try {
-  const existing = db.prepare("SELECT id FROM users WHERE username = ?").get("batman");
-  if (!existing) {
-    const hash = bcrypt.hashSync("Batcave2026!", 10);
-    db.prepare(
-      "INSERT INTO users (username, email, password_hash, created_at) VALUES (?, ?, ?, ?)"
-    ).run("batman", "batman@batcave.local", hash, new Date().toISOString());
-    console.log("[authdb] compte de test batman cree dans auth_server.db");
+  const testUser = process.env.BATAUTH_TEST_USER;
+  const testEmail = process.env.BATAUTH_TEST_EMAIL;
+  const testPassword = process.env.BATAUTH_TEST_PASSWORD;
+
+  if (testUser && testEmail && testPassword) {
+    const existing = db.prepare("SELECT id FROM users WHERE username = ?").get(testUser);
+    if (!existing) {
+      const hash = bcrypt.hashSync(testPassword, 10);
+      db.prepare(
+        "INSERT INTO users (username, email, password_hash, created_at) VALUES (?, ?, ?, ?)"
+      ).run(testUser, testEmail, hash, new Date().toISOString());
+      console.log(`[authdb] compte de test ${testUser} cree dans auth_server.db`);
+    }
   }
 } catch (err) {
   console.error("[authdb] erreur lors du seeding du compte de test:", err);
 }
 
 module.exports = db;
+
