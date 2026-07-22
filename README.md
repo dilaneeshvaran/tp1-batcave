@@ -30,6 +30,11 @@ Then open http://localhost:3000 in your browser.
    node -e "require('./db').prepare('UPDATE users SET role = ? WHERE username = ?').run('ADMIN', 'your_username')"
    ```
 
+## test account for bat auth :
+
+identifiant / email : batman (batman@batcave.local)
+mdp : Batcave2026!
+
 ---
 
 By Dilan EESHVARAN 4iw1
