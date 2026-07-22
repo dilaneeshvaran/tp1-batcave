@@ -78,7 +78,7 @@ function completeOAuthLogin(req, res, user) {
     );
   } catch (_) {}
 
-  return res.redirect("/");
+  return res.redirect("/bat-computer");
 }
 
 router.get("/auth/error", (req, res) => {
