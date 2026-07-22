@@ -438,7 +438,7 @@
             .then((data) => {
               const outputEl = document.getElementById("missions-output");
               if (data.error) {
-                outputEl.innerHTML = `<p style="color: #c0392b; font-weight: bold;">${data.message || data.error}</p>`;
+                outputEl.innerHTML = `<p style="color: #7f8c8d; font-style: italic; margin-top: 10px;">${data.message || data.error}</p>`;
                 return;
               }
               let html = `<div style="margin-bottom: 10px; color: #2980b9; font-weight: bold;">${data.secretLevel || ''}</div>`;
@@ -461,11 +461,20 @@
               outputEl.innerHTML = html;
             })
             .catch(() => {
-              document.getElementById("missions-output").innerHTML = `<p style="color: #c0392b;">ereur lors de la récuperation des missions.</p>`;
+              document.getElementById("missions-output").innerHTML = `<p style="color: #c0392b;">erreur lors de la récupération des missions.</p>`;
             });
         });
 
-        loadMissionsBtn.click();
+        const hasBatAuthToken = document.cookie.split("; ").some((c) => c.trim().startsWith("batauth_token="));
+        if (hasBatAuthToken) {
+          loadMissionsBtn.click();
+        } else {
+          document.getElementById("missions-output").innerHTML = `
+            <p style="font-size: 0.9em; margin-top: 10px;">
+              acces reservé au sso bat-auth : seule une auth via le button "Connexion via Bat-Auth" donne le jeton oauth 2.0 (port 4000) requis pour deverrouiller ce coffre fort de ressources sur le port 5000
+            </p>
+          `;
+        }
       }
     </script>
   </body>
