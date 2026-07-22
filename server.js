@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const db = require("./config/db");
 const authRouter = require("./routes/auth");
+const oauthRouter = require("./routes/oauth");
 const batcomputerRouter = require("./routes/batcomputer");
 const adminRouter = require("./routes/admin");
 const sessionSecurity = require("./middlewares/sessionSecurity");
@@ -30,6 +31,7 @@ app.use(sessionSecurity);
 
 // Mount entity routers
 app.use("/", authRouter);
+app.use("/", oauthRouter);
 app.use("/", batcomputerRouter);
 app.use("/", adminRouter);
 
