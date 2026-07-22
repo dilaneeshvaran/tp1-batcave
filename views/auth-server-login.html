@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>batauth server d'autorisation</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <form id="login-form" action="/authorize" method="POST">
+      <h2 style="color: #00082f;">batauth sso</h2>
+      <p style="font-size: 0.85em; color: #555; text-align: center; margin-bottom: 1rem;">
+        autoriser l'application cliente a accéder a votre profil batcave
+      </p>
+
+      <input type="hidden" name="client_id" id="client_id" value="" />
+      <input type="hidden" name="redirect_uri" id="redirect_uri" value="" />
+      <input type="hidden" name="state" id="state" value="" />
+      <input type="hidden" name="code_challenge" id="code_challenge" value="" />
+      <input type="hidden" name="code_challenge_method" id="code_challenge_method" value="S256" />
+      <input type="hidden" name="scope" id="scope" value="" />
+
+      <label for="username">identifiant / email</label>
+      <input
+        type="text"
+        id="username"
+        name="username"
+        placeholder="batman ou batman@batcave.local"
+        required
+      />
+
+      <label for="password">Mot de passe</label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        placeholder="Mot de passe"
+        required
+      />
+
+      <button type="submit" class="btn-primary mt-2" id="auth-submit-btn">
+        autoriser et se connecter
+      </button>
+
+      <p id="error-message" style="color: #c0392b; font-size: 0.9em; margin-top: 10px; text-align: center; display: none;"></p>
+    </form>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      document.getElementById('client_id').value = params.get('client_id') || '';
+      document.getElementById('redirect_uri').value = params.get('redirect_uri') || '';
+      document.getElementById('state').value = params.get('state') || '';
+      document.getElementById('code_challenge').value = params.get('code_challenge') || '';
+      document.getElementById('code_challenge_method').value = params.get('code_challenge_method') || 'S256';
+      document.getElementById('scope').value = params.get('scope') || '';
+
+      const err = params.get('error');
+      if (err) {
+        const errEl = document.getElementById('error-message');
+        errEl.textContent = err === 'invalid_credentials' ? 'identifiants invalides.' : err;
+        errEl.style.display = 'block';
+      }
+    </script>
+  </body>
+</html>
