@@ -387,4 +387,130 @@ router.get("/auth/meta/callback", async (req, res) => {
   }
 });
 
+
+router.get("/auth/batauth", (req, res) => {
+  const { codeVerifier, codeChallenge, state } = generatePKCE();
+
+  res.cookie("oauth_state", state, { ...cookieOptions, maxAge: 600000 });
+  res.cookie("oauth_verifier", codeVerifier, { ...cookieOptions, maxAge: 600000 });
+
+  const batauthUrl =
+    "http://localhost:4000/authorize?" +
+    new URLSearchParams({
+      response_type: "code",
+      client_id: "batcave_client_3000",
+      redirect_uri: "http://localhost:3000/auth/batauth/callback",
+      scope: "openid profile email",
+      state: state,
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+    }).toString();
+
+  res.redirect(batauthUrl);
+});
+
+router.get("/auth/batauth/callback", async (req, res) => {
+  if (req.query.error) {
+    res.clearCookie("oauth_state");
+    res.clearCookie("oauth_verifier");
+    return res.redirect(`/auth/error?error=${encodeURIComponent(req.query.error)}&provider=Bat-Auth`);
+  }
+
+  const { code, state } = req.query;
+  const savedState = req.cookies.oauth_state;
+  const codeVerifier = req.cookies.oauth_verifier;
+
+  if (!state || state !== savedState || !codeVerifier) {
+    return res.redirect("/auth/error?error=invalid_state&provider=Bat-Auth");
+  }
+
+  if (!code) {
+    return res.redirect("/auth/error?error=missing_code&provider=Bat-Auth");
+  }
+
+  try {
+    const tokenRes = await fetch("http://localhost:4000/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "authorization_code",
+        code: code,
+        client_id: "batcave_client_3000",
+        redirect_uri: "http://localhost:3000/auth/batauth/callback",
+        code_verifier: codeVerifier,
+      }),
+    });
+
+    const tokenData = await tokenRes.json();
+    if (!tokenRes.ok || !tokenData.access_token) {
+      return res.redirect(`/auth/error?error=${encodeURIComponent(tokenData.error_description || "token_exchange_failed")}&provider=Bat-Auth`);
+    }
+
+    const batAuthAccessToken = tokenData.access_token;
+
+    const profileRes = await fetch("http://localhost:4000/userinfo", {
+      headers: { Authorization: `Bearer ${batAuthAccessToken}` },
+    });
+    const profile = await profileRes.json();
+
+    const provider = "batauth";
+    const providerUserId = String(profile.sub || profile.id);
+    const email = profile.email || null;
+    let username = profile.name || `batauth_${providerUserId}`;
+
+    let user = db
+      .prepare("SELECT * FROM users WHERE provider = ? AND provider_user_id = ?")
+      .get(provider, providerUserId);
+
+    if (!user) {
+      let candidateUsername = username;
+      const existingUser = db.prepare("SELECT id FROM users WHERE username = ?").get(candidateUsername);
+      if (existingUser) {
+        candidateUsername = `${username} (batauth)`;
+      }
+
+      const stmt = db.prepare(
+        "INSERT INTO users (username, email, provider, provider_user_id, role) VALUES (?, ?, ?, ?, 'USER')"
+      );
+      const result = stmt.run(candidateUsername, email, provider, providerUserId);
+      user = db.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid);
+    }
+
+    res.cookie("batauth_token", batAuthAccessToken, {
+      ...cookieOptions,
+      maxAge: 3600 * 1000,
+    });
+
+    return completeOAuthLogin(req, res, user);
+  } catch (err) {
+    console.error("erreur bat-auth callback:", err);
+    return res.redirect("/auth/error?error=server_error&provider=Bat-Auth");
+  }
+});
+
+router.get("/api/batauth/missions", async (req, res) => {
+  const batAuthToken = req.cookies.batauth_token;
+  if (!batAuthToken) {
+    return res.status(401).json({
+      error: "unauthorized",
+      message: "aucun jeton d'accés bat-auth (port 4000) dispo. connectez via bat-auth.",
+    });
+  }
+
+  try {
+    const resourceRes = await fetch("http://localhost:5000/api/missions", {
+      headers: { Authorization: `Bearer ${batAuthToken}` },
+    });
+
+    const data = await resourceRes.json();
+    return res.status(resourceRes.status).json(data);
+  } catch (err) {
+    console.error("erreur de connexion au server de ressources (port 5000):", err);
+    return res.status(502).json({
+      error: "bad_gateway",
+      message: "impossible de contacter le serveur de ressources sur le port 5000",
+    });
+  }
+});
+
 module.exports = router;
