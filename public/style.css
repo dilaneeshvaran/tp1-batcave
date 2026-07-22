@@ -14,14 +14,18 @@ body.dashboard {
 }
 
 #register-form,
-#login-form {
+#login-form,
+.home-card {
   background: #fff;
-  padding: 20px 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 40px 50px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
-  width: 300px;
+  align-items: center;
+  gap: 12px;
+  width: 360px;
+  box-sizing: border-box;
 }
 
 #register-form label,
@@ -29,6 +33,8 @@ body.dashboard {
   margin-bottom: 5px;
   font-weight: bold;
   color: #333;
+  width: 100%;
+  text-align: left;
 }
 
 #register-form input,
@@ -37,6 +43,8 @@ body.dashboard {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .btn-primary {
@@ -60,8 +68,8 @@ body.dashboard {
   text-align: center;
 }
 
-#register-form a,
-#login-form a {
+#register-form a:not(.btn-oauth),
+#login-form a:not(.btn-oauth) {
   text-decoration: none;
   color: #00082f;
   font-size: 0.9em;
@@ -70,8 +78,8 @@ body.dashboard {
   display: block;
 }
 
-#register-form a:hover,
-#login-form a:hover {
+#register-form a:not(.btn-oauth):hover,
+#login-form a:not(.btn-oauth):hover {
   text-decoration: underline;
 }
 
@@ -156,6 +164,7 @@ body.dashboard {
   align-items: center;
   gap: 12px;
   width: 360px;
+  box-sizing: border-box;
 }
 
 .home-title {
@@ -173,8 +182,25 @@ body.dashboard {
 .home-actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
+}
+
+.home-actions label {
+  font-weight: bold;
+  color: #333;
+  font-size: 0.9em;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.home-actions input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95em;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .home-btn {
@@ -534,6 +560,8 @@ body.dashboard {
   text-align: center;
   margin: 1.2rem 0;
   color: #7f8c8d;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .oauth-divider::before,
@@ -569,6 +597,8 @@ body.dashboard {
   text-decoration: none !important;
   transition: all 0.2s ease-in-out;
   box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .oauth-icon {
