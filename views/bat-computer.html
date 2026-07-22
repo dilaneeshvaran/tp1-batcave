@@ -18,6 +18,14 @@
     </header>
 
     <main class="container">
+      <h2>missions confidentielles (port 5000)</h2>
+      <div id="batauth-missions" style="margin-bottom: 25px;">
+        <div style="padding: 15px; background: white; border-radius: 8px; border: 1px solid #ccc;">
+          <button type="button" class="btn-primary" id="btn-load-missions">charger les missions depuis le port 5000</button>
+          <div id="missions-output" style="margin-top: 15px;"></div>
+        </div>
+      </div>
+
       <h2>Arsenal Top Secret</h2>
       <div id="secrets"></div>
 
@@ -421,6 +429,44 @@
             msgDiv.textContent = "erreur de connexion avec le serveur";
           });
       });
+
+      const loadMissionsBtn = document.getElementById("btn-load-missions");
+      if (loadMissionsBtn) {
+        loadMissionsBtn.addEventListener("click", () => {
+          fetch("/api/batauth/missions")
+            .then((res) => res.json())
+            .then((data) => {
+              const outputEl = document.getElementById("missions-output");
+              if (data.error) {
+                outputEl.innerHTML = `<p style="color: #c0392b; font-weight: bold;">${data.message || data.error}</p>`;
+                return;
+              }
+              let html = `<div style="margin-bottom: 10px; color: #2980b9; font-weight: bold;">${data.secretLevel || ''}</div>`;
+              html += `<div class="secrets-grid">`;
+              if (Array.isArray(data.missions)) {
+                data.missions.forEach((m) => {
+                  html += `
+                    <div class="card">
+                      <div class="card-body">
+                        <h3 style="margin-top: 0; color: #00082f;">[${m.id}] ${m.title}</h3>
+                        <p><strong>cible :</strong> ${m.target}</p>
+                        <p><strong>statut :</strong> <span style="color: #e67e22; font-weight: bold;">${m.status}</span></p>
+                        <p><strong>priorité :</strong> ${m.priority}</p>
+                      </div>
+                    </div>
+                  `;
+                });
+              }
+              html += `</div>`;
+              outputEl.innerHTML = html;
+            })
+            .catch(() => {
+              document.getElementById("missions-output").innerHTML = `<p style="color: #c0392b;">ereur lors de la récuperation des missions.</p>`;
+            });
+        });
+
+        loadMissionsBtn.click();
+      }
     </script>
   </body>
 </html>
