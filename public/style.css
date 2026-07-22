@@ -528,3 +528,87 @@ body.dashboard {
   color: #c0392b;
 }
 
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.2rem 0;
+  color: #7f8c8d;
+}
+
+.oauth-divider::before,
+.oauth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.oauth-divider span {
+  padding: 0 10px;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.oauth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-oauth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95em;
+  text-decoration: none !important;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.oauth-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-google {
+  background-color: #ffffff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+}
+
+.btn-google:hover {
+  background-color: #f8f9fa;
+  border-color: #d2e3fc;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+}
+
+.btn-github {
+  background-color: #24292e;
+  color: #ffffff;
+  border: 1px solid #24292e;
+}
+
+.btn-github:hover {
+  background-color: #1b1f23;
+  color: #ffffff;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.btn-meta {
+  background-color: #1877f2;
+  color: #ffffff;
+  border: 1px solid #1877f2;
+}
+
+.btn-meta:hover {
+  background-color: #166fe5;
+  color: #ffffff;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
