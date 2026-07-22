@@ -19,7 +19,7 @@ body.dashboard {
   background: #fff;
   padding: 40px 50px;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -158,7 +158,7 @@ body.dashboard {
   background: #fff;
   padding: 40px 50px;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   align-items: center;
